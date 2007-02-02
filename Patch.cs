@@ -49,12 +49,11 @@ namespace Laan.DLOD
 						(position.Y * (_size - 1)) + y
 					);
 
-                    _vertexBuffer[x + y * _size] = new VertexPositionColor(new Vector3(p.X, _terrain.HeightAt(p), p.Y), Color.White);
+                    _vertexBuffer[x + y * _size] = new VertexPositionColor(new Vector3(p.X, p.Y, _terrain.HeightAt(p)), Color.White);
 				}
 
 			_root = new RootNode(this);
 		}
-
 
         private double Distance(Point a, Point b)
         {
@@ -70,7 +69,7 @@ namespace Laan.DLOD
             double maxDistance = Distance(
                 new Point(-half, -half),
                 new Point(half, half)
-            );
+            ) / 2;
 
             half = _terrain.PatchesPerRow / 2;
             Point p = _position;
@@ -79,7 +78,11 @@ namespace Laan.DLOD
             p.X *= _size / 2;
             p.Y *= _size / 2;
 
-            double distance = Distance(p, new Point((int)camera.LookAt.X, (int)camera.LookAt.Y));
+            Point capped = new Point((int)camera.LookAt.X, (int)camera.LookAt.Y);
+            capped.X = Math.Min(capped.X, _terrain.Height);
+            capped.Y = Math.Min(capped.Y, _terrain.Height);
+
+            double distance = Distance(p, capped);
 
             Level = (int)(_terrain.MaxPatchDepth - (((distance - maxDistance) / maxDistance) * _terrain.MaxPatchDepth));
 		}

@@ -30,8 +30,8 @@ namespace Laan.DLOD
             _step = _size / 20.0f;
             _game = game;
 
-            _cameraPosition = new Vector3(0, _size, 1);
-            _lookAt = new Vector3(0, _size / 2.0f, 0);
+            _cameraPosition = new Vector3(0, -4 * _size, 1);
+            _lookAt = new Vector3(0, -2 * _size, 0);
             _cameraUpVector = new Vector3(0, 1, 0);
 
         }
@@ -116,7 +116,7 @@ namespace Laan.DLOD
                     windowSize.Height * 1.0f /
                     windowSize.Width, 
                     1.0f, 
-                    5000.0f
+                    50000.0f
                 ); 
             }
         }
