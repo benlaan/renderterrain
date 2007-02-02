@@ -55,15 +55,33 @@ namespace Laan.DLOD
 			_root = new RootNode(this);
 		}
 
+
+        private double Distance(Point a, Point b)
+        {
+            int dx = (a.X - b.X);
+            int dy = (a.Y - b.Y);
+            double l = Math.Pow(dy, 2) + Math.Pow(dx, 2);
+            return Math.Sqrt(l);
+        }
+
 		public void Update(TerrainCamera camera)
 		{
+            int half = _terrain.Height / 2;
+            double maxDistance = Distance(
+                new Point(-half, -half),
+                new Point(half, half)
+            );
+
+            half = _terrain.PatchesPerRow / 2;
             Point p = _position;
-            //p.X -= (_size + 1) / 2;
-            //p.Y -= (_size + 1) / 2;
-            Level = -2 + (int)(Math.Sqrt(
-				Math.Pow(p.Y - camera.LookAt.Z, 2) +
-				Math.Pow(p.X - camera.LookAt.Y, 2))
-			);
+            p.X -= half;
+            p.Y -= half;
+            p.X *= _size / 2;
+            p.Y *= _size / 2;
+
+            double distance = Distance(p, new Point((int)camera.LookAt.X, (int)camera.LookAt.Y));
+
+            Level = (int)(_terrain.MaxPatchDepth - (((distance - maxDistance) / maxDistance) * _terrain.MaxPatchDepth));
 		}
 
 		internal bool HasSibling(Direction direction, ref Patch sibling)
@@ -90,7 +108,7 @@ namespace Laan.DLOD
 			   siblingPos.X < _terrain.PatchesPerRow &&
 			   siblingPos.Y < _terrain.PatchesPerRow)
 			{
-			   sibling = _terrain.patches[siblingPos.X, siblingPos.Y];
+			   sibling = _terrain._patches[siblingPos.X, siblingPos.Y];
 			}
 			return (sibling != null);
 		}

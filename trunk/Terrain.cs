@@ -16,11 +16,16 @@ namespace Laan.DLOD
     {
         //VertexPositionColor[] vertices;
 
-        Effect effect;
-        //GraphicsDeviceManager graphics;
-        internal GraphicsDevice _device;
-        private int             _height;
-        private TerrainCamera   _camera;
+        internal GraphicsDevice       _device;
+        internal Patch[,]             _patches;
+
+        private Effect                _effect;
+        private System.Drawing.Bitmap _heightMap;
+        private int                   _maxPatchDepth;
+        private int                   _patchesPerRow;
+        private int                   _patchWidth;
+        private int                   _height;
+        private TerrainCamera         _camera;
 
 		public Terrain(Game game, string heightMapName, int patchWidth) : base(game)
         {
@@ -53,7 +58,7 @@ namespace Laan.DLOD
 
         internal float HeightAt(System.Drawing.Point offset)
         {
-            return 0; // (_heightMap.GetPixel(offset.X, offset.Y).R / 255.0f) * 2.0f;
+            return ((float)_heightMap.GetPixel(offset.X, offset.Y).R / 255.0f) * (_height / 10);
         }
 
         private bool IsWholeNumber(double value)
@@ -90,13 +95,6 @@ namespace Laan.DLOD
             set { _camera = value; }
         }
 
-        internal Patch[,] patches;
-
-		private System.Drawing.Bitmap _heightMap;
-		private int _maxPatchDepth;
-		private int _patchesPerRow;
-		private int _patchWidth;
-
         /// <summary>
         /// Allows the game component to perform any initialization it needs to before starting
         /// to run.  This is where it can query for any required services and load content.
@@ -111,31 +109,17 @@ namespace Laan.DLOD
             // generate a matrix of patches, giving each an offset so it knows it's
             // position within the matrix
             Patch.Count = 0;
-            patches = new Patch[_patchesPerRow, _patchesPerRow];
+            _patches = new Patch[_patchesPerRow, _patchesPerRow];
             for (int y = 0; y < _patchesPerRow; y++)
                 for (int x = 0; x < _patchesPerRow; x++)
-                    patches[x, y] = new Patch(this, _patchWidth, new Point(x, y)); 
+                    _patches[x, y] = new Patch(this, _patchWidth, new Point(x, y)); 
             
             
             CompiledEffect compiledEffect = Effect.CompileEffectFromFile("@/../../../../effect.fx", null, null, CompilerOptions.None, TargetPlatform.Windows);
-            effect = new Effect(this.GraphicsDevice, compiledEffect.GetEffectCode(), CompilerOptions.None, null);
-
-            SetUpCamera();
+            _effect = new Effect(this.GraphicsDevice, compiledEffect.GetEffectCode(), CompilerOptions.None, null);
+            _effect.Parameters["xWorld"].SetValue(Matrix.Identity);
         }
 
-        private void SetUpCamera()
-        {
-            //Matrix viewMatrix = Matrix.CreateLookAt(new Vector3(0, 0, 40), new Vector3(0, 0, 0), new Vector3(0, 1, 0));
-            //Matrix projectionMatrix = Matrix.CreatePerspectiveFieldOfView(MathHelper.PiOver4, 800 / 500, 1.0f, 50.0f);
-
-            //effect.Parameters["xView"].SetValue(viewMatrix);
-            //effect.Parameters["xProjection"].SetValue(projectionMatrix);
-
-            //effect.Parameters["xView"].SetValue(_camera.View);
-            //effect.Parameters["xProjection"].SetValue(_camera.Projection);
-            effect.Parameters["xWorld"].SetValue(Matrix.Identity);
-        }
-        
         /// <summary>
         /// Allows the game component to update itself.
         /// </summary>
@@ -148,7 +132,7 @@ namespace Laan.DLOD
             {
                 for (int y = 0; y < _patchesPerRow; y++)
                     for (int x = 0; x < _patchesPerRow; x++)
-                        patches[x, y].Update(_camera);
+                        _patches[x, y].Update(_camera);
             }
             base.Update(gameTime);
         }
@@ -165,19 +149,19 @@ namespace Laan.DLOD
             _device.RenderState.CullMode = CullMode.CullClockwiseFace;
             _device.Clear(Color.DarkSlateBlue);
 
-            effect.CurrentTechnique = effect.Techniques["Colored"];
+            _effect.CurrentTechnique = _effect.Techniques["Colored"];
 
             Matrix worldMatrix = Matrix.Identity;
             int offset = -1 * (_height / 2);
-            worldMatrix = Matrix.CreateTranslation(new Vector3(offset, offset, 1));
+            worldMatrix = Matrix.CreateTranslation(new Vector3(offset, 1, offset));
             worldMatrix *= Matrix.CreateRotationX(-0.9f);
             //worldMatrix *= Matrix.CreateScale(new Vector3(2, 1, 2));
 
-            effect.Parameters["xView"].SetValue(_camera.View);
-            effect.Parameters["xProjection"].SetValue(_camera.Projection);
-            effect.Parameters["xWorld"].SetValue(worldMatrix);
-            effect.Begin();
-            foreach (EffectPass pass in effect.CurrentTechnique.Passes)
+            _effect.Parameters["xView"].SetValue(_camera.View);
+            _effect.Parameters["xProjection"].SetValue(_camera.Projection);
+            _effect.Parameters["xWorld"].SetValue(worldMatrix);
+            _effect.Begin();
+            foreach (EffectPass pass in _effect.CurrentTechnique.Passes)
             {
                 pass.Begin();
 
@@ -186,7 +170,7 @@ namespace Laan.DLOD
                 {
                     for (int x = 0; x < _patchesPerRow; x++)
                     {
-                        Patch p = patches[x, y];
+                        Patch p = _patches[x, y];
                         _device.VertexDeclaration = new VertexDeclaration(_device, VertexPositionColor.VertexElements);
 
                         VertexBuffer buffer = new VertexBuffer(
@@ -222,12 +206,9 @@ namespace Laan.DLOD
                     }
                 }
 
-                //_device.VertexDeclaration =
-                //_device.DrawUserPrimitives
-
                 pass.End();
             }
-            effect.End();
+            _effect.End();
 
             base.Draw(gameTime);
         }

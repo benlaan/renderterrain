@@ -21,17 +21,17 @@ namespace Laan.DLOD
 
         Game _game;
 
-        int _step;
+        float _step;
         int _size;
 
         public TerrainCamera(Game game, int size) : base(game)
         {
             _size = size;
-            _step = _size / 10;
+            _step = _size / 20.0f;
             _game = game;
 
-            _cameraPosition = new Vector3(0, _size * 3, 1);
-            _lookAt = new Vector3(0, 0, 0);
+            _cameraPosition = new Vector3(0, _size, 1);
+            _lookAt = new Vector3(0, _size / 2.0f, 0);
             _cameraUpVector = new Vector3(0, 1, 0);
 
         }
@@ -54,6 +54,8 @@ namespace Laan.DLOD
         public override void Update(GameTime gameTime)
         {
             KeyboardState keyboardState = Keyboard.GetState();
+
+            this.Game.Window.Title = String.Format("P: {0} L: {1}", _cameraPosition, _lookAt);
 
             if (keyboardState.IsKeyDown(Keys.Left))
             {
@@ -94,6 +96,10 @@ namespace Laan.DLOD
             get { return _lookAt; }
         }
 
+        public Vector3 CameraPosition
+        {
+            get { return _cameraPosition; }
+        }
 
         public Matrix View
         {
