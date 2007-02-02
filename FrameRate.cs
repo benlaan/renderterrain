@@ -117,7 +117,7 @@ namespace Laan.DLOD
             {
                 string currentFramerateString = this.showDecimals ? this.currentFramerate.ToString(this.displayFormat) : ((int)this.currentFramerate).ToString("D");
 
-                this.Game.Window.Title = "FPS: " + currentFramerateString;
+//                this.Game.Window.Title = "FPS: " + currentFramerateString;
 
                 this.canDraw = false;
             }
