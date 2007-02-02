@@ -1,0 +1,7 @@
+bin\x86\Debug\DLOD.exe
+bin\x86\Debug\DLOD.pdb
+obj\x86\Debug\ResolveAssemblyReference.cache
+obj\x86\Debug\DLOD.exe
+obj\x86\Debug\DLOD.pdb
+bin\x86\Debug\effect.xnb
+bin\x86\Debug\DLOD.exe.config
