@@ -146,16 +146,16 @@ namespace Laan.DLOD
 
             _device.RenderState.FillMode = FillMode.WireFrame;
 
-            _device.RenderState.CullMode = CullMode.CullClockwiseFace;
+            _device.RenderState.CullMode = CullMode.CullCounterClockwiseFace;
             _device.Clear(Color.DarkSlateBlue);
 
             _effect.CurrentTechnique = _effect.Techniques["Colored"];
 
             Matrix worldMatrix = Matrix.Identity;
             int offset = -1 * (_height / 2);
-            worldMatrix = Matrix.CreateTranslation(new Vector3(offset, 1, offset));
-            worldMatrix *= Matrix.CreateRotationX(-0.9f);
-            //worldMatrix *= Matrix.CreateScale(new Vector3(2, 1, 2));
+            worldMatrix = Matrix.CreateTranslation(new Vector3(offset, offset, 1));
+//            worldMatrix *= Matrix.CreateRotationX(-0.9f);
+            worldMatrix *= Matrix.CreateScale(new Vector3(3, 3, 1));
 
             _effect.Parameters["xView"].SetValue(_camera.View);
             _effect.Parameters["xProjection"].SetValue(_camera.Projection);
