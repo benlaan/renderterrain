@@ -14,7 +14,7 @@ namespace Laan.DLOD
     /// </summary>
     public partial class Grid : Microsoft.Xna.Framework.DrawableGameComponent
     {
-        BasicEffect basicEffect; 
+        BasicEffect _effect; 
         private TerrainCamera _camera;
         internal GraphicsDevice _device;
         VertexPositionNormalTexture[] pointList;
@@ -53,8 +53,8 @@ namespace Laan.DLOD
 
             _device = this.GraphicsDevice;
 
-            basicEffect = new BasicEffect(this.GraphicsDevice, null);
-            basicEffect.DiffuseColor = new Vector3(1.0f, 1.0f, 1.0f);
+            _effect = new BasicEffect(this.GraphicsDevice, null);
+            _effect.DiffuseColor = new Vector3(1.0f, 1.0f, 1.0f);
         }
 
         /// <summary>
@@ -83,12 +83,12 @@ namespace Laan.DLOD
             Matrix worldMatrix = Matrix.Identity;
             worldMatrix *= Matrix.CreateScale(100);
 
-            basicEffect.View = _camera.View;
-            basicEffect.Projection = _camera.Projection;
-            basicEffect.World = worldMatrix;
+            _effect.View = _camera.View;
+            _effect.Projection = _camera.Projection;
+            _effect.World = worldMatrix;
 
-            basicEffect.Begin();
-            foreach (EffectPass pass in basicEffect.CurrentTechnique.Passes)
+            _effect.Begin();
+            foreach (EffectPass pass in _effect.CurrentTechnique.Passes)
             {
                 pass.Begin();
 
@@ -112,7 +112,7 @@ namespace Laan.DLOD
 
                 pass.End();
             }
-            basicEffect.End();
+            _effect.End();
         }
 
     }

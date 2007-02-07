@@ -6,6 +6,8 @@ using Microsoft.Xna.Framework.Content;
 using Microsoft.Xna.Framework.Graphics;
 using Microsoft.Xna.Framework.Input;
 using Microsoft.Xna.Framework.Storage;
+using System.Drawing.Imaging;
+using System.Diagnostics;
 
 namespace Laan.DLOD
 {
@@ -18,17 +20,23 @@ namespace Laan.DLOD
 
         internal GraphicsDevice       _device;
         internal Patch[,]             _patches;
+        internal int                  _scale;
 
-        private Effect                _effect;
+        //private BasicEffect _effect;
+        private Effect _effect;
         private System.Drawing.Bitmap _heightMap;
         private int                   _maxPatchDepth;
         private int                   _patchesPerRow;
         private int                   _patchWidth;
         private int                   _height;
         private TerrainCamera         _camera;
+        private double                _maxDistance;
+        private bool                  _wireFrame = false;
+        private float[,]              _heightField;
 
 		public Terrain(Game game, string heightMapName, int patchWidth) : base(game)
         {
+            _scale = 3;
 			_patchWidth = patchWidth;
 			_heightMap = new System.Drawing.Bitmap(heightMapName);
 
@@ -45,7 +53,7 @@ namespace Laan.DLOD
 			if(!IsWholeNumber(log2))
 				throw new ArgumentException("Height map must be one plus a power of 2 (ie 5, 9, 17, 65, 257, etc.");
 
-			_maxPatchDepth = 2 + (int)log2;
+            _maxPatchDepth = 2 + (int)Math.Log(_height / _patchWidth, 2);
 
 			double patchCount = _height / _patchWidth;
                                                   
@@ -54,11 +62,71 @@ namespace Laan.DLOD
 					"PatchLevel incompatable with heightMap - must allow an NxN number of patches");
 
 			_patchesPerRow = (int)patchCount;
-		}
+
+            int half = Height / 2;
+            _maxDistance = Distance(
+                new Point(-half, -half),
+                new Point(half, half)
+            );
+
+            GenerateHeightField();
+        }
+
+        private void GenerateHeightField()
+        {
+            Trace.WriteLine("Loading HeightMap");
+
+            _heightField = new float[_height + 1, _height + 1];
+            float fScale = (_height / 5f) / 255.0f;
+
+            BitmapData data = _heightMap.LockBits(
+                new System.Drawing.Rectangle(0, 0, _heightMap.Height, _heightMap.Width), 
+                ImageLockMode.ReadOnly,
+                PixelFormat.Format32bppArgb
+            );
+            try
+            {
+                // Declare an array to hold the bytes of the bitmap.
+                // This code is specific to a bitmap with 24 bits per pixels.
+                int bytes = Height * Height * 4;
+                byte[] rgbValues = new byte[bytes];
+                IntPtr ptr = data.Scan0;
+                System.Runtime.InteropServices.Marshal.Copy(ptr, rgbValues, 0, bytes);
+
+                for (int y = 0; y < _height; y++)
+                    for (int x = 0; x < _height; x++)
+                    {
+                        byte b = rgbValues[4 * (y * Height + x)];
+                        _heightField[x, y] = b * fScale;
+                    }
+            }
+            finally
+            {
+                _heightMap.UnlockBits(data);
+                _heightMap.Dispose();
+                _heightMap = null;
+            }
+        }
 
         internal float HeightAt(System.Drawing.Point offset)
         {
-            return ((float)_heightMap.GetPixel(offset.X, offset.Y).R / 255.0f) * (_height / 10);
+            return _heightField[offset.X, offset.Y];
+        }
+
+        internal Color ColorAt(System.Drawing.Point offset)
+        {
+            float f = _heightField[offset.X, offset.Y];
+
+            if (f < 30)
+                return Color.Blue;
+            if (f < 60)
+                return Color.Yellow;
+            if (f < 70)
+                return Color.Green;
+            if (f < 220)
+                return Color.Brown;
+            else
+                return Color.White;
         }
 
         private bool IsWholeNumber(double value)
@@ -95,6 +163,19 @@ namespace Laan.DLOD
             set { _camera = value; }
         }
 
+        public double MaxDistance
+        {
+            get { return _maxDistance; }
+        }
+
+        internal double Distance(Point a, Point b)
+        {
+            int dx = (a.X - b.X);
+            int dy = (a.Y - b.Y);
+            double l = Math.Pow(dy, 2) + Math.Pow(dx, 2);
+            return Math.Sqrt(l);
+        }
+
         /// <summary>
         /// Allows the game component to perform any initialization it needs to before starting
         /// to run.  This is where it can query for any required services and load content.
@@ -109,15 +190,30 @@ namespace Laan.DLOD
             // generate a matrix of patches, giving each an offset so it knows it's
             // position within the matrix
             Patch.Count = 0;
+
+            Trace.WriteLine("Building Patch Array");
             _patches = new Patch[_patchesPerRow, _patchesPerRow];
+
             for (int y = 0; y < _patchesPerRow; y++)
                 for (int x = 0; x < _patchesPerRow; x++)
-                    _patches[x, y] = new Patch(this, _patchWidth, new Point(x, y)); 
-            
-            
-            CompiledEffect compiledEffect = Effect.CompileEffectFromFile("@/../../../../effect.fx", null, null, CompilerOptions.None, TargetPlatform.Windows);
+                    _patches[x, y] = new Patch(this, _patchWidth, new Point(x, y));
+
+            Trace.WriteLine("Compiling Effect File");
+            CompiledEffect compiledEffect = 
+                Effect.CompileEffectFromFile(
+                    "@/../../../../effect.fx", 
+                    null, null, 
+                    CompilerOptions.None, 
+                    TargetPlatform.Windows
+                );
+
             _effect = new Effect(this.GraphicsDevice, compiledEffect.GetEffectCode(), CompilerOptions.None, null);
-            _effect.Parameters["xWorld"].SetValue(Matrix.Identity);
+            //_effect.Parameters["xWorld"].SetValue(Matrix.Identity);
+            
+            //_effect = new BasicEffect(this.GraphicsDevice, null);
+            //_effect.DiffuseColor = new Vector3(1.0f, 1.0f, 1.0f);
+
+            UpdatePatches();
         }
 
         /// <summary>
@@ -128,13 +224,31 @@ namespace Laan.DLOD
         {
             KeyboardState keyboardState = Keyboard.GetState();
 
-            //if (keyboardState.IsKeyDown(Keys.Space))
+            if (keyboardState.IsKeyDown(Keys.Tab))
+                _wireFrame = !_wireFrame;
+            
+            if (keyboardState.IsKeyDown(Keys.Space))
             {
+                int count = 0;
+                Trace.WriteLine(String.Format("MaxDistance: {0:0.00}  MaxPatch: {1}", MaxDistance, MaxPatchDepth));
+                Trace.Indent();
                 for (int y = 0; y < _patchesPerRow; y++)
                     for (int x = 0; x < _patchesPerRow; x++)
-                        _patches[x, y].Update(_camera);
+                        Trace.WriteLine((++count).ToString() + " " + _patches[x, y].ToString());
+                Trace.Unindent();
             }
+
+            if (_camera.Moved)
+                UpdatePatches();
+
             base.Update(gameTime);
+        }
+
+        private void UpdatePatches()
+        {
+            for (int y = 0; y < _patchesPerRow; y++)
+                for (int x = 0; x < _patchesPerRow; x++)
+                    _patches[x, y].Update(_camera);
         }
 
         /// <summary>
@@ -144,7 +258,10 @@ namespace Laan.DLOD
         public override void Draw(GameTime gameTime)
         {
 
-            _device.RenderState.FillMode = FillMode.WireFrame;
+            if (_wireFrame)
+                _device.RenderState.FillMode = FillMode.WireFrame;
+            else
+                _device.RenderState.FillMode = FillMode.Solid;
 
             _device.RenderState.CullMode = CullMode.CullCounterClockwiseFace;
             _device.Clear(Color.DarkSlateBlue);
@@ -154,12 +271,18 @@ namespace Laan.DLOD
             Matrix worldMatrix = Matrix.Identity;
             int offset = -1 * (_height / 2);
             worldMatrix = Matrix.CreateTranslation(new Vector3(offset, offset, 1));
-//            worldMatrix *= Matrix.CreateRotationX(-0.9f);
-            worldMatrix *= Matrix.CreateScale(new Vector3(3, 3, 1));
+
+//                worldMatrix *= Matrix.CreateRotationX(1f);
+            worldMatrix *= Matrix.CreateScale(new Vector3(_scale, _scale, _scale));
 
             _effect.Parameters["xView"].SetValue(_camera.View);
             _effect.Parameters["xProjection"].SetValue(_camera.Projection);
             _effect.Parameters["xWorld"].SetValue(worldMatrix);
+
+            //_effect.View = _camera.View;
+            //_effect.Projection = _camera.Projection;
+            //_effect.World = worldMatrix;
+            
             _effect.Begin();
             foreach (EffectPass pass in _effect.CurrentTechnique.Passes)
             {
@@ -193,16 +316,22 @@ namespace Laan.DLOD
                             p.IndexBuffer.Length, 
                             ResourceUsage.WriteOnly, 
                             ResourceManagementMode.Automatic
-                        );
+                        ); 
 
                         ib.SetData<int>(p.IndexBuffer);
                         _device.Indices = ib;
 
-                        _device.DrawIndexedPrimitives(
-                            PrimitiveType.TriangleList,
-                            0, 0, p.VerticesCount,
-                            0, p.IndexBuffer.Length / 3
-                        );
+                        try
+                        {
+                            _device.DrawIndexedPrimitives(
+                                PrimitiveType.TriangleList,
+                                0, 0, p.VerticesCount,
+                                0, p.IndexBuffer.Length / 3
+                            );
+                        }
+                        catch (Exception)
+                        {
+                        }
                     }
                 }
 

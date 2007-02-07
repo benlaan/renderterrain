@@ -9,7 +9,7 @@ namespace Laan.DLOD
         /// </summary>
         static void Main(string[] args)
         {
-            using (TerrainViewer game = new TerrainViewer())
+            using (GameController game = new GameController())
             {
                 game.Run();
             }

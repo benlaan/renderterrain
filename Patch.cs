@@ -45,46 +45,38 @@ namespace Laan.DLOD
 				for(int x = 0; x < _size; x++)
 				{
                     System.Drawing.Point p = new System.Drawing.Point(
-						(position.X * (_size - 1)) + x,
-						(position.Y * (_size - 1)) + y
-					);
+                        (position.X * (_size - 1)) + x,
+                        (position.Y * (_size - 1)) + y
+                    );
 
-                    _vertexBuffer[x + y * _size] = new VertexPositionColor(new Vector3(p.X, p.Y, _terrain.HeightAt(p)), Color.White);
+                    _vertexBuffer[x + y * _size] = 
+                        new VertexPositionColor(
+                            new Vector3(p.X, p.Y, _terrain.HeightAt(p)),
+                            _terrain.ColorAt(p)
+                        );
 				}
 
-			_root = new RootNode(this);
-		}
-
-        private double Distance(Point a, Point b)
-        {
-            int dx = (a.X - b.X);
-            int dy = (a.Y - b.Y);
-            double l = Math.Pow(dy, 2) + Math.Pow(dx, 2);
-            return Math.Sqrt(l);
+			_root = new RootNode(this);      
         }
+
+        private double distance;
 
 		public void Update(TerrainCamera camera)
 		{
-            int half = _terrain.Height / 2;
-            double maxDistance = Distance(
-                new Point(-half, -half),
-                new Point(half, half)
-            ) / 2;
-
-            half = _terrain.PatchesPerRow / 2;
+            int half = _terrain.PatchesPerRow / 2;
             Point p = _position;
             p.X -= half;
             p.Y -= half;
-            p.X *= _size / 2;
-            p.Y *= _size / 2;
+            p.X *= _size *_terrain._scale;
+            p.Y *= _size * _terrain._scale;
 
             Point capped = new Point((int)camera.LookAt.X, (int)camera.LookAt.Y);
-            capped.X = Math.Min(capped.X, _terrain.Height);
-            capped.Y = Math.Min(capped.Y, _terrain.Height);
+            //capped.X = Math.Min(capped.X, _terrain.Height);
+            //capped.Y = Math.Min(capped.Y, _terrain.Height);
 
-            double distance = Distance(p, capped);
+            distance = _terrain.Distance(p, capped);
 
-            Level = (int)(_terrain.MaxPatchDepth - (((distance - maxDistance) / maxDistance) * _terrain.MaxPatchDepth));
+            Level = 1 + (int)(((_terrain.MaxDistance - distance) / _terrain.MaxDistance) * _terrain.MaxPatchDepth);
 		}
 
 		internal bool HasSibling(Direction direction, ref Patch sibling)
@@ -100,17 +92,18 @@ namespace Laan.DLOD
 				siblingPos.Y--;
 				break;
 			  case Direction.East:
-				siblingPos.X--;
-				break;
-			  case Direction.West:
 				siblingPos.X++;
 				break;
+			  case Direction.West:
+				siblingPos.X--;
+				break;
 			}
-			if(siblingPos.X >= 0 &&
-			   siblingPos.Y >= 0 &&
-			   siblingPos.X < _terrain.PatchesPerRow &&
-			   siblingPos.Y < _terrain.PatchesPerRow)
-			{
+
+            if (siblingPos.X >= 0 &&
+               siblingPos.Y >= 0 &&
+               siblingPos.X < _terrain.PatchesPerRow &&
+               siblingPos.Y < _terrain.PatchesPerRow)
+            {
 			   sibling = _terrain._patches[siblingPos.X, siblingPos.Y];
 			}
 			return (sibling != null);
@@ -142,7 +135,7 @@ namespace Laan.DLOD
 			get {
                 if (_levelChanged || _allIndexes == null)
                 {
-                    Trace.WriteLine(String.Format("{0}: {1}", _position, Level));
+//                    Trace.WriteLine(String.Format("{0}: {1}", _position, Level));
                     int[] _indexes = new int[10000];
                     int pos = 0;
                     _root.CalcAllIndexes(ref pos, ref _indexes);
@@ -156,13 +149,18 @@ namespace Laan.DLOD
 			}
 		}
 
+        public override string ToString()
+        {
+            return String.Format("P: {0} d: {1:0.00} L: {2}", _position, distance, Level);
+        }
+
 		internal int Level
 		{
 			get { return _level; }
 			set {
                 // ensure the patch level doesn't exceed the terrain's max
-                int newLevel = Math.Min(value, _terrain.MaxPatchDepth);
-                if (newLevel != _level)
+                int newLevel = Math.Max(0, Math.Min(value, _terrain.MaxPatchDepth));
+//                if (newLevel != _level)
 				{
                     _level = newLevel;
                     _levelChanged = true;
