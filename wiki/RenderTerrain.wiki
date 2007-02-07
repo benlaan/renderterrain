@@ -1,0 +1,18 @@
+#summary Main Page
+
+= Introduction =
+
+This project is an implemention of a Discrete Level Of Detail Algorithm, as found on www.gamasutra.com, by Chris Dallaire, entitled "Binary Triangle Trees for Terrain Tile Index Buffer Generation".
+
+Currently supports only _very_ limited shading..
+
+
+= Other Information =
+ * [http://www.gamasutra.com/features/20061221/dallaire_01.shtml Original Article]
+
+= To Do List =
+ * Better shader effects
+ * improved camera logic
+ * text for logging, fps, etc
+ * text-based command menu
+
