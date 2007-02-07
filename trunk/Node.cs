@@ -133,9 +133,9 @@ namespace Laan.DLOD
 			if(Orientation == Direction.Internal || Orientation == Direction.None || Patch.Level % 2 == 0)
 				return false;
 
-			Patch sibling = null;
-			if(Patch.HasSibling(Orientation, ref sibling) && (Patch.Level == sibling.Level - 1))
-				return true;
+            Patch sibling = null;
+            if (Patch.HasSibling(Orientation, ref sibling) && (Patch.Level == sibling.Level - 1))
+                return true;
 
 			return false;
 		}

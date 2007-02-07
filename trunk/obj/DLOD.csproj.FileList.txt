@@ -5,3 +5,5 @@ obj\x86\Debug\DLOD.exe
 obj\x86\Debug\DLOD.pdb
 bin\x86\Debug\effect.xnb
 bin\x86\Debug\DLOD.exe.config
+obj\x86\Debug\Laan.DLOD.DebugForm.resources
+obj\x86\Debug\DLOD.csproj.GenerateResource.Cache
