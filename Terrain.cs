@@ -16,27 +16,33 @@ namespace Laan.DLOD
     /// </summary>
     public partial class Terrain : Microsoft.Xna.Framework.DrawableGameComponent
     {
-        //VertexPositionColor[] vertices;
 
         internal GraphicsDevice       _device;
         internal Patch[,]             _patches;
         internal int                  _scale;
 
         //private BasicEffect _effect;
-        private Effect _effect;
-        private System.Drawing.Bitmap _heightMap;
+        private Effect                _effect;
+        private System.Drawing.Bitmap   _heightMap;
         private int                   _maxPatchDepth;
         private int                   _patchesPerRow;
         private int                   _patchWidth;
         private int                   _height;
-        private TerrainCamera         _camera;
+        private Camera                _camera;
         private double                _maxDistance;
         private bool                  _wireFrame = false;
         private float[,]              _heightField;
+        private float                 _scaleHeights;
+
+        private Texture2D             dirtTexture;
+        private Texture2D             waterTexture;
+        private Texture2D             stoneTexture;
+        private Texture2D             grassTexture;
+        private Texture2D             alphaTexture;
 
 		public Terrain(Game game, string heightMapName, int patchWidth) : base(game)
         {
-            _scale = 3;
+            _scale = 5;
 			_patchWidth = patchWidth;
 			_heightMap = new System.Drawing.Bitmap(heightMapName);
 
@@ -67,66 +73,322 @@ namespace Laan.DLOD
             _maxDistance = Distance(
                 new Point(-half, -half),
                 new Point(half, half)
-            );
+            ) * _scale / 2;
 
             GenerateHeightField();
         }
 
-        private void GenerateHeightField()
+        private int[] heightThreshold = new int[] { 46, 100, 190, 250 };
+
+        internal int Threshold(float height)
+        {
+            int h = 0;
+            while (h < 3 && height > heightThreshold[h])
+                h++;
+
+            return h;
+        }
+
+        private System.Drawing.Color SampleRange(int x, int y)
+        {
+            int[] textureCount = new int[4] { 0, 0, 0, 0 };
+
+            int passes = 0;
+            for (int dy = -1; dy <= 1; dy++)
+                for (int dx = -1; dx <= 1; dx++)
+                {
+                    int dxx = dx + x;
+                    int dyy = dy + y;
+                    if (dxx >= 0 && dxx < _height && dyy >= 0 && dyy < _height)
+                    {
+                        float h = _heightField[dxx, dyy];
+                        int t = Threshold(h);
+                        textureCount[t]++;
+                        passes++;
+                    }
+                }
+
+            for (int i = 0; i < 4; i++)
+                textureCount[i] = (int)(textureCount[i] * 1.0f / passes * 255.0f);
+
+            return System.Drawing.Color.FromArgb(textureCount[0], textureCount[1], textureCount[2], textureCount[3]);
+        }
+
+        private Texture2D GenerateTexture()
+        {
+            Trace.WriteLine("Generating Texture");
+            System.Drawing.Bitmap bitmap = new System.Drawing.Bitmap(_height + 1, _height + 1);
+            for (int y = 0; y < _height; y++)
+                for (int x = 0; x < _height; x++)
+                {
+                    bitmap.SetPixel(x,y, SampleRange(x, y)); 
+                }
+
+            using (System.IO.MemoryStream stream = new System.IO.MemoryStream())
+            {
+                bitmap.Save(@"D:\test.png", ImageFormat.Png);
+                bitmap.Save(stream, ImageFormat.Bmp);
+                stream.Position = 0;
+                return Texture2D.FromFile(GraphicsDevice, stream);
+            };
+        }
+
+        //private void GenerateHeightField()
+        //{
+        //    Trace.WriteLine("Loading HeightMap");
+
+        //    _heightField = new float[_height + 1, _height + 1];
+        //    _scaleHeights = (_height / 5f) / 255.0f;
+
+        //    for (int y = 0; y < _height; y++)
+        //        for (int x = 0; x < _height; x++)
+        //            _heightField[x, y] = _heightMap.PixelData[x, y];
+
+        //    // no longer required..
+        //    _heightMap = null;
+        //}
+
+        void GenerateHeightField()
         {
             Trace.WriteLine("Loading HeightMap");
 
             _heightField = new float[_height + 1, _height + 1];
-            float fScale = (_height / 5f) / 255.0f;
-
-            BitmapData data = _heightMap.LockBits(
-                new System.Drawing.Rectangle(0, 0, _heightMap.Height, _heightMap.Width), 
-                ImageLockMode.ReadOnly,
-                PixelFormat.Format32bppArgb
-            );
-            try
-            {
-                // Declare an array to hold the bytes of the bitmap.
-                // This code is specific to a bitmap with 24 bits per pixels.
-                int bytes = Height * Height * 4;
-                byte[] rgbValues = new byte[bytes];
-                IntPtr ptr = data.Scan0;
-                System.Runtime.InteropServices.Marshal.Copy(ptr, rgbValues, 0, bytes);
-
-                for (int y = 0; y < _height; y++)
-                    for (int x = 0; x < _height; x++)
-                    {
-                        byte b = rgbValues[4 * (y * Height + x)];
-                        _heightField[x, y] = b * fScale;
-                    }
-            }
-            finally
-            {
-                _heightMap.UnlockBits(data);
-                _heightMap.Dispose();
-                _heightMap = null;
-            }
+            for (int y = 0; y < _height; y++)
+                for (int x = 0; x < _height; x++)
+                {
+                    _heightField[x, y] = (float)_heightMap.GetPixel(x, y).R;
+                }
         }
 
+        //private void GenerateHeightField()
+        //{
+        //    Trace.WriteLine("Loading HeightMap");
+
+        //    _heightField = new float[_height + 1, _height + 1];
+        //    _scaleHeights = (_height / 5f) / 255.0f;
+
+        //    BitmapData data = _heightMap.LockBits(
+        //        new System.Drawing.Rectangle(0, 0, _heightMap.Height, _heightMap.Width),
+        //        ImageLockMode.ReadOnly,
+        //        PixelFormat.Format32bppArgb
+        //    );
+        //    try
+        //    {
+        //        // Declare an array to hold the bytes of the bitmap.
+        //        // This code is specific to a bitmap with 24 bits per pixels.
+        //        int bytes = Height * Height * 3;
+        //        byte[] rgbValues = new byte[bytes];
+        //        IntPtr ptr = data.Scan0;
+        //        System.Runtime.InteropServices.Marshal.Copy(ptr, rgbValues, 0, bytes);
+
+        //        for (int y = 0; y < _height; y++)
+        //            for (int x = 0; x < _height; x++)
+        //            {
+        //                _heightField[x, y] = rgbValues[3 * (y * Height + x)];
+        //            }
+        //    }
+        //    finally
+        //    {
+        //        _heightMap.UnlockBits(data);
+        //        _heightMap.Dispose();
+        //        _heightMap = null;
+        //    }
+        //}
+
+        private void GenerateNormalMap()
+        {
+            Trace.WriteLine("Generating Texture");
+
+            for (int y = 0; y < _patchesPerRow; y++)
+                for (int x = 0; x < _patchesPerRow; x++)
+                    _patches[x, y].GenerateNormalMap();
+        }
+
+        internal double Distance(Point a, Point b)
+        {
+            int dx = (a.X - b.X);
+            int dy = (a.Y - b.Y);
+            double l = Math.Pow(dy, 2) + Math.Pow(dx, 2);
+            return Math.Sqrt(l);
+        }
+        
+        /// <summary>
+        /// Allows the game component to perform any initialization it needs to before starting
+        /// to run.  This is where it can query for any required services and load content.
+        /// </summary>
+        public override void Initialize()
+        {
+
+            base.Initialize();
+
+            _device = this.GraphicsDevice;
+            
+            ContentManager content = new ContentManager(this.Game.Services);
+
+            dirtTexture = content.Load<Texture2D>(@"Content\dirt");
+            waterTexture = content.Load<Texture2D>(@"Content\water");
+            stoneTexture = content.Load<Texture2D>(@"Content\stone");
+            grassTexture = content.Load<Texture2D>(@"Content\grass");
+            alphaTexture = GenerateTexture();
+
+            // generate a matrix of patches, giving each an offset so it knows it's
+            // position within the matrix
+            Patch.Count = 0;
+
+            Trace.WriteLine("Building Patch Array");
+            _patches = new Patch[_patchesPerRow, _patchesPerRow];
+
+            for (int y = 0; y < _patchesPerRow; y++)
+                for (int x = 0; x < _patchesPerRow; x++)
+                    _patches[x, y] = new Patch(this, _patchWidth, new Point(x, y));
+
+            Trace.WriteLine("Compiling Effect File");
+            CompiledEffect compiledEffect = 
+                Effect.CompileEffectFromFile(
+                //"@/../../../../TerrainLighting.fx", 
+                   @"../../../Content/Splatting.fx", 
+                    null, null, 
+                    CompilerOptions.None, 
+                    TargetPlatform.Windows
+                );
+
+            _effect = new Effect(_device, compiledEffect.GetEffectCode(), CompilerOptions.None, null);
+            _effect.CurrentTechnique = _effect.Techniques["TextureSplatting"];
+            _effect.Parameters["alphaTexture"].SetValue(alphaTexture);
+            _effect.Parameters["dirtTexture"].SetValue(dirtTexture);
+            _effect.Parameters["grassTexture"].SetValue(grassTexture);
+            _effect.Parameters["waterTexture"].SetValue(waterTexture);
+            _effect.Parameters["stoneTexture"].SetValue(stoneTexture);
+
+            UpdatePatches();
+
+            GenerateNormalMap();
+
+            for (int y = 0; y < _patchesPerRow; y++)
+                for (int x = 0; x < _patchesPerRow; x++)
+                    _patches[x, y].InitialiseBuffer(_device);
+        }
+
+        /// <summary>
+        /// Allows the game component to update itself.
+        /// </summary>
+        /// <param name="gameTime">Provides a snapshot of timing values.</param>
+        public override void Update(GameTime gameTime)
+        {
+            KeyboardState keyboardState = Keyboard.GetState();
+
+            if (keyboardState.IsKeyDown(Keys.Tab))
+            {
+                _wireFrame = !_wireFrame;
+            }
+            
+            if (keyboardState.IsKeyDown(Keys.Space))
+            {
+                int count = 0;
+                Trace.WriteLine(String.Format("MaxDistance: {0:0.00}  MaxPatch: {1}", MaxDistance, MaxPatchDepth));
+                Trace.Indent();
+                for (int y = 0; y < _patchesPerRow; y++)
+                    for (int x = 0; x < _patchesPerRow; x++)
+                        Trace.WriteLine((++count).ToString() + " " + _patches[x, y].ToString());
+                Trace.Unindent();
+            }
+
+            if (_camera.Moved)
+                UpdatePatches();
+
+            base.Update(gameTime);
+        }
+
+        private void UpdatePatches()
+        {
+            for (int y = 0; y < _patchesPerRow; y++)
+                for (int x = 0; x < _patchesPerRow; x++)
+                    _patches[x, y].Update(_camera);
+
+            for (int y = 0; y < _patchesPerRow; y++)
+                for (int x = 0; x < _patchesPerRow; x++)
+                    _patches[x, y].Recalculate();
+        }
+
+        /// <summary>
+        /// Allows the game component to update itself.
+        /// </summary>
+        /// <param name="gameTime">Provides a snapshot of timing values.</param>
+        public override void Draw(GameTime gameTime)
+        {
+
+            if (_wireFrame)
+                _device.RenderState.FillMode = FillMode.WireFrame;
+            else
+                _device.RenderState.FillMode = FillMode.Solid;
+
+            _device.RenderState.CullMode = CullMode.CullCounterClockwiseFace;
+//            _device.Clear(Color.DarkSlateBlue);
+
+            Matrix worldMatrix = Matrix.Identity;
+            int offset = -1 * (_height / 2);
+            worldMatrix = Matrix.CreateTranslation(new Vector3(offset, offset, 1));
+            worldMatrix *= Matrix.CreateScale(new Vector3(_scale, _scale, _scale));
+
+            _effect.Parameters["xViewProjection"].SetValue(worldMatrix * _camera.View * _camera.Projection);
+
+            _effect.Begin();
+            foreach (EffectPass pass in _effect.CurrentTechnique.Passes)
+            {
+                pass.Begin();
+
+                // generate index buffer for each patch
+                for (int y = 0; y < _patchesPerRow; y++)
+                {
+                    for (int x = 0; x < _patchesPerRow; x++)
+                    {
+                        Patch p = _patches[x, y];
+                        if (p.Visible)
+                        {
+                            _device.VertexDeclaration = new VertexDeclaration(
+                                _device, 
+                                VertexPositionNormalTexture.VertexElements
+                            );
+                            _device.Vertices[0].SetSource(
+                                p.Buffer, 0, VertexPositionNormalTexture.SizeInBytes
+                            );
+
+                            using (IndexBuffer ib = new IndexBuffer(
+                                _device, typeof(int),
+                                p.IndexBuffer.Length,
+                                ResourceUsage.WriteOnly,
+                                ResourceManagementMode.Automatic))
+                            {
+                                ib.SetData<int>(p.IndexBuffer);
+                                _device.Indices = ib;
+                                try
+                                {
+                                    _device.DrawIndexedPrimitives(
+                                        PrimitiveType.TriangleList,
+                                        0, 0, p.VerticesCount,
+                                        0, p.IndexBuffer.Length / 3
+                                    );
+                                }
+                                catch (Exception)
+                                {
+                                }
+                            }
+                        }
+                    }
+                }
+
+                pass.End();
+            }
+            _effect.End();
+
+            base.Draw(gameTime);
+        }
         internal float HeightAt(System.Drawing.Point offset)
         {
-            return _heightField[offset.X, offset.Y];
-        }
-
-        internal Color ColorAt(System.Drawing.Point offset)
-        {
-            float f = _heightField[offset.X, offset.Y];
-
-            if (f < 30)
-                return Color.Blue;
-            if (f < 60)
-                return Color.Yellow;
-            if (f < 70)
-                return Color.Green;
-            if (f < 220)
-                return Color.Brown;
-            else
-                return Color.White;
+            float h = _heightField[offset.X, offset.Y] * _scaleHeights;
+            //if (h < 20)
+            //    h = 20;
+            return h;
         }
 
         private bool IsWholeNumber(double value)
@@ -157,7 +419,7 @@ namespace Laan.DLOD
             get { return _height; }
         }
 
-        public TerrainCamera Camera
+        public Camera Camera
         {
             get { return _camera; }
             set { _camera = value; }
@@ -168,179 +430,6 @@ namespace Laan.DLOD
             get { return _maxDistance; }
         }
 
-        internal double Distance(Point a, Point b)
-        {
-            int dx = (a.X - b.X);
-            int dy = (a.Y - b.Y);
-            double l = Math.Pow(dy, 2) + Math.Pow(dx, 2);
-            return Math.Sqrt(l);
-        }
-
-        /// <summary>
-        /// Allows the game component to perform any initialization it needs to before starting
-        /// to run.  This is where it can query for any required services and load content.
-        /// </summary>
-        public override void Initialize()
-        {
-
-            base.Initialize();
-
-            _device = this.GraphicsDevice;
-
-            // generate a matrix of patches, giving each an offset so it knows it's
-            // position within the matrix
-            Patch.Count = 0;
-
-            Trace.WriteLine("Building Patch Array");
-            _patches = new Patch[_patchesPerRow, _patchesPerRow];
-
-            for (int y = 0; y < _patchesPerRow; y++)
-                for (int x = 0; x < _patchesPerRow; x++)
-                    _patches[x, y] = new Patch(this, _patchWidth, new Point(x, y));
-
-            Trace.WriteLine("Compiling Effect File");
-            CompiledEffect compiledEffect = 
-                Effect.CompileEffectFromFile(
-                    "@/../../../../effect.fx", 
-                    null, null, 
-                    CompilerOptions.None, 
-                    TargetPlatform.Windows
-                );
-
-            _effect = new Effect(this.GraphicsDevice, compiledEffect.GetEffectCode(), CompilerOptions.None, null);
-            //_effect.Parameters["xWorld"].SetValue(Matrix.Identity);
-            
-            //_effect = new BasicEffect(this.GraphicsDevice, null);
-            //_effect.DiffuseColor = new Vector3(1.0f, 1.0f, 1.0f);
-
-            UpdatePatches();
-        }
-
-        /// <summary>
-        /// Allows the game component to update itself.
-        /// </summary>
-        /// <param name="gameTime">Provides a snapshot of timing values.</param>
-        public override void Update(GameTime gameTime)
-        {
-            KeyboardState keyboardState = Keyboard.GetState();
-
-            if (keyboardState.IsKeyDown(Keys.Tab))
-                _wireFrame = !_wireFrame;
-            
-            if (keyboardState.IsKeyDown(Keys.Space))
-            {
-                int count = 0;
-                Trace.WriteLine(String.Format("MaxDistance: {0:0.00}  MaxPatch: {1}", MaxDistance, MaxPatchDepth));
-                Trace.Indent();
-                for (int y = 0; y < _patchesPerRow; y++)
-                    for (int x = 0; x < _patchesPerRow; x++)
-                        Trace.WriteLine((++count).ToString() + " " + _patches[x, y].ToString());
-                Trace.Unindent();
-            }
-
-            if (_camera.Moved)
-                UpdatePatches();
-
-            base.Update(gameTime);
-        }
-
-        private void UpdatePatches()
-        {
-            for (int y = 0; y < _patchesPerRow; y++)
-                for (int x = 0; x < _patchesPerRow; x++)
-                    _patches[x, y].Update(_camera);
-        }
-
-        /// <summary>
-        /// Allows the game component to update itself.
-        /// </summary>
-        /// <param name="gameTime">Provides a snapshot of timing values.</param>
-        public override void Draw(GameTime gameTime)
-        {
-
-            if (_wireFrame)
-                _device.RenderState.FillMode = FillMode.WireFrame;
-            else
-                _device.RenderState.FillMode = FillMode.Solid;
-
-            _device.RenderState.CullMode = CullMode.CullCounterClockwiseFace;
-            _device.Clear(Color.DarkSlateBlue);
-
-            _effect.CurrentTechnique = _effect.Techniques["Colored"];
-
-            Matrix worldMatrix = Matrix.Identity;
-            int offset = -1 * (_height / 2);
-            worldMatrix = Matrix.CreateTranslation(new Vector3(offset, offset, 1));
-
-//                worldMatrix *= Matrix.CreateRotationX(1f);
-            worldMatrix *= Matrix.CreateScale(new Vector3(_scale, _scale, _scale));
-
-            _effect.Parameters["xView"].SetValue(_camera.View);
-            _effect.Parameters["xProjection"].SetValue(_camera.Projection);
-            _effect.Parameters["xWorld"].SetValue(worldMatrix);
-
-            //_effect.View = _camera.View;
-            //_effect.Projection = _camera.Projection;
-            //_effect.World = worldMatrix;
-            
-            _effect.Begin();
-            foreach (EffectPass pass in _effect.CurrentTechnique.Passes)
-            {
-                pass.Begin();
-
-                // generate index buffer for each patch
-                for (int y = 0; y < _patchesPerRow; y++)
-                {
-                    for (int x = 0; x < _patchesPerRow; x++)
-                    {
-                        Patch p = _patches[x, y];
-                        _device.VertexDeclaration = new VertexDeclaration(_device, VertexPositionColor.VertexElements);
-
-                        VertexBuffer buffer = new VertexBuffer(
-                            _device,
-                            sizeof(float) * 4 * p.VertexBuffer.Length,
-                            ResourceUsage.WriteOnly,
-                            ResourceManagementMode.Automatic
-                        );
-                        buffer.SetData<VertexPositionColor>(p.VertexBuffer);
-
-                        _device.Vertices[0].SetSource(
-                            buffer, 
-                            0, 
-                            VertexPositionColor.SizeInBytes
-                        );
-
-                        IndexBuffer ib = new IndexBuffer(
-                            _device, 
-                            typeof(int), 
-                            p.IndexBuffer.Length, 
-                            ResourceUsage.WriteOnly, 
-                            ResourceManagementMode.Automatic
-                        ); 
-
-                        ib.SetData<int>(p.IndexBuffer);
-                        _device.Indices = ib;
-
-                        try
-                        {
-                            _device.DrawIndexedPrimitives(
-                                PrimitiveType.TriangleList,
-                                0, 0, p.VerticesCount,
-                                0, p.IndexBuffer.Length / 3
-                            );
-                        }
-                        catch (Exception)
-                        {
-                        }
-                    }
-                }
-
-                pass.End();
-            }
-            _effect.End();
-
-            base.Draw(gameTime);
-        }
     }
 }
 

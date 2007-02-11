@@ -6,6 +6,7 @@ using Microsoft.Xna.Framework.Graphics;
 using Microsoft.Xna.Framework.Input;
 using Microsoft.Xna.Framework.Storage;
 
+using XNAExtras;
 
 namespace Laan.DLOD
 {
@@ -17,11 +18,14 @@ namespace Laan.DLOD
         private float deltaFPSTime;
         private double currentFramerate;
         private string windowTitle, displayFormat;
-        private bool canDraw;
         private bool showDecimals;
+        private BitmapFont fontCourierNew;
+        private Point _point;
+
         
-        public FrameRate(Game game) : base(game)
+        public FrameRate(Game game, Point point) : base(game)
         {
+            _point = point;
         }
 
         /// <summary>
@@ -32,10 +36,12 @@ namespace Laan.DLOD
         {
             // TODO: Add your initialization code here
 
-            this.canDraw = false;
             this.currentFramerate = 0;
             this.windowTitle = this.Game != null ? this.Game.Window.Title : String.Empty;
 
+            fontCourierNew = new BitmapFont(@"..\..\..\Content\courier12.xml", this.Game);
+            //this.Game.Components.Add(fontCourierNew);
+            fontCourierNew.Initialize();
             base.Initialize();
         }
 
@@ -70,7 +76,8 @@ namespace Laan.DLOD
         }
 
         /// <summary>
-        /// Gets or sets a value indicating whether the decimal part of the framerate value must be display as fixed format (or as double format, otherwise).
+        /// Gets or sets a value indicating whether the decimal part of the framerate value 
+        /// must be display as fixed format (or as double format, otherwise).
         /// </summary>
         /// <remarks>
         /// The 'ShowDecimals' property must be set to true in order to set the proper format.
@@ -79,6 +86,16 @@ namespace Laan.DLOD
         {
             get { return this.displayFormat == "F"; }
             set { this.displayFormat = value == true ? "F" : "R"; }
+        }
+
+        protected override void LoadGraphicsContent(bool loadAllContent)
+        {
+            if (loadAllContent)
+            {
+                //fontCourierNew.Reset(GraphicsDevice);
+            }
+
+            // TODO: Load any ResourceManagementMode.Manual content
         }
 
         /// <summary>
@@ -93,12 +110,12 @@ namespace Laan.DLOD
             // Ads the elapsed time to the cumulative delta time.
             this.deltaFPSTime += elapsed;
 
-            // If delta time is greater than a second: (a) the framerate is calculated, (b) it is marked to be drawn, and (c) the delta time is adjusted, accordingly.
+            // If delta time is greater than a second: (a) the framerate is calculated, 
+            // (b) it is marked to be drawn, and (c) the delta time is adjusted, accordingly.
             if (this.deltaFPSTime > 1000)
             {
                 this.currentFramerate = 1000 / elapsed;
                 this.deltaFPSTime -= 1000;
-                this.canDraw = true;
             }
             
             base.Update(gameTime);
@@ -113,13 +130,13 @@ namespace Laan.DLOD
         public override void Draw(GameTime gameTime)
         {
             // If the framerate can be drawn, it is shown in the window's title of the game.
-            if (this.canDraw)
             {
-                string currentFramerateString = this.showDecimals ? this.currentFramerate.ToString(this.displayFormat) : ((int)this.currentFramerate).ToString("D");
+                string currentFramerateString = this.showDecimals ? 
+                    this.currentFramerate.ToString(this.displayFormat) : 
+                    ((int)this.currentFramerate).ToString("D");
 
-//                this.Game.Window.Title = "FPS: " + currentFramerateString;
-
-                this.canDraw = false;
+                                this.Game.Window.Title =  "FPS: " + currentFramerateString;
+                fontCourierNew.DrawString(_point.X, _point.Y, Color.White, "FPS: " + currentFramerateString);
             }
         }
     }

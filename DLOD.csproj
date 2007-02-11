@@ -53,15 +53,13 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="DebugForm.cs">
-      <SubType>Form</SubType>
+    <Compile Include="BitmapFont.cs">
       <XNAUseContentPipeline>false</XNAUseContentPipeline>
-      <Name>DebugForm</Name>
+      <Name>BitmapFont</Name>
     </Compile>
-    <Compile Include="DebugForm.Designer.cs">
-      <DependentUpon>DebugForm.cs</DependentUpon>
+    <Compile Include="Bitmap.cs">
       <XNAUseContentPipeline>false</XNAUseContentPipeline>
-      <Name>DebugForm.Designer</Name>
+      <Name>Bitmap</Name>
     </Compile>
     <Compile Include="FrameRate.cs">
       <XNAUseContentPipeline>false</XNAUseContentPipeline>
@@ -111,26 +109,40 @@
     </Content>
   </ItemGroup>
   <ItemGroup>
-    <Content Include="effect.fx">
-      <XNAUseContentPipeline>true</XNAUseContentPipeline>
-      <Importer>EffectImporter</Importer>
-      <Processor>EffectProcessor</Processor>
-      <Name>effect</Name>
-    </Content>
-  </ItemGroup>
-  <ItemGroup>
     <None Include="app.config">
       <XNAUseContentPipeline>false</XNAUseContentPipeline>
       <Name>app</Name>
     </None>
-  </ItemGroup>
-  <ItemGroup>
-    <EmbeddedResource Include="DebugForm.resx">
-      <SubType>Designer</SubType>
-      <XNAUseContentPipeline>false</XNAUseContentPipeline>
-      <Name>DebugForm</Name>
-      <DependentUpon>DebugForm.cs</DependentUpon>
-    </EmbeddedResource>
+    <Content Include="Content\dirt.jpg">
+      <XNAUseContentPipeline>true</XNAUseContentPipeline>
+      <Importer>TextureImporter</Importer>
+      <Processor>SpriteTextureProcessor</Processor>
+      <Name>dirt</Name>
+    </Content>
+    <Content Include="Content\grass.jpg">
+      <XNAUseContentPipeline>true</XNAUseContentPipeline>
+      <Importer>TextureImporter</Importer>
+      <Processor>SpriteTextureProcessor</Processor>
+      <Name>grass</Name>
+    </Content>
+    <Content Include="Content\stone.jpg">
+      <XNAUseContentPipeline>true</XNAUseContentPipeline>
+      <Importer>TextureImporter</Importer>
+      <Processor>SpriteTextureProcessor</Processor>
+      <Name>stone</Name>
+    </Content>
+    <Content Include="Content\water.jpg">
+      <XNAUseContentPipeline>true</XNAUseContentPipeline>
+      <Importer>TextureImporter</Importer>
+      <Processor>SpriteTextureProcessor</Processor>
+      <Name>water</Name>
+    </Content>
+    <Content Include="Content\Splatting.fx">
+      <XNAUseContentPipeline>true</XNAUseContentPipeline>
+      <Importer>EffectImporter</Importer>
+      <Processor>EffectProcessor</Processor>
+      <Name>Splatting</Name>
+    </Content>
   </ItemGroup>
   <Import Project="$(MSBuildBinPath)\Microsoft.CSharp.targets" />
   <Import Project="$(MSBuildExtensionsPath)\Microsoft\XNA\Game Studio Express\v1.0\Microsoft.Xna.ContentPipeline.targets" />

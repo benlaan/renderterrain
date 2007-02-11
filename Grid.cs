@@ -15,11 +15,11 @@ namespace Laan.DLOD
     public partial class Grid : Microsoft.Xna.Framework.DrawableGameComponent
     {
         BasicEffect _effect; 
-        private TerrainCamera _camera;
+        private Camera _camera;
         internal GraphicsDevice _device;
         VertexPositionNormalTexture[] pointList;
 
-        public Grid(Game game, TerrainCamera camera) : base(game)
+        public Grid(Game game, Camera camera) : base(game)
         {
             // TODO: Construct any child components here
             _camera = camera;

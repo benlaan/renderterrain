@@ -7,6 +7,7 @@ using Microsoft.Xna.Framework.Graphics;
 using Microsoft.Xna.Framework.Input;
 using Microsoft.Xna.Framework.Storage;
 using System.Configuration;
+using XNAExtras;
 
 namespace Laan.DLOD
 {
@@ -18,8 +19,9 @@ namespace Laan.DLOD
         GraphicsDeviceManager graphics;
         public ContentManager content;
 
+        BitmapFont fontCourierNew;
         Terrain _terrain;
-        TerrainCamera _camera;
+        Camera _camera;
 
         public GameController()
         {
@@ -43,13 +45,18 @@ namespace Laan.DLOD
             int patchWidth = Int32.Parse(ConfigurationSettings.AppSettings["patchWidth"]);
             string heightMap = ConfigurationSettings.AppSettings["heightMap"];
 
+            Point fpsPosition = new Point(700, 10);
+
             _terrain = new Terrain(this, heightMap, patchWidth);
-            _camera = new TerrainCamera(_terrain, this, _terrain.Height);
+            _camera = new Camera(_terrain, this, _terrain.Height);
             _terrain.Camera = _camera;
             this.Components.Add(_terrain);
             this.Components.Add(_camera);
-            this.Components.Add(new FrameRate(this));
+            this.Components.Add(new FrameRate(this, fpsPosition));
             this.Components.Add(new Grid(this, _camera));
+
+            fontCourierNew = new BitmapFont(@"..\..\..\Content\courier12.xml", this);
+            this.Components.Add(fontCourierNew);
 
             //DebugForm form = new DebugForm(_terrain.PatchesPerRow);
             //form.Show();
@@ -112,7 +119,7 @@ namespace Laan.DLOD
         {
             graphics.GraphicsDevice.Clear(Color.CornflowerBlue);
 
-            // TODO: Add your drawing code here
+            fontCourierNew.TextBox(new Rectangle(0, 0, 500, 100), Color.White, _camera.ToString());
 
             base.Draw(gameTime);
         }
