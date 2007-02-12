@@ -74,14 +74,12 @@ namespace Laan.DLOD
         /// <param name="gameTime">Provides a snapshot of timing values.</param>
         public override void Draw(GameTime gameTime)
         {
-
             _device.RenderState.FillMode = FillMode.WireFrame;
 
             _device.RenderState.CullMode = CullMode.CullClockwiseFace;
-            _device.Clear(Color.DarkSlateBlue);
 
             Matrix worldMatrix = Matrix.Identity;
-            worldMatrix *= Matrix.CreateScale(100);
+            worldMatrix *= Matrix.CreateScale(10000);
 
             _effect.View = _camera.View;
             _effect.Projection = _camera.Projection;

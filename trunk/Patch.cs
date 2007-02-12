@@ -22,17 +22,19 @@ namespace Laan.DLOD
 
 		public int ID = Count++;
 
-		private VertexPositionNormalTexture[] _vertexBuffer;
-		private int[]                 _allIndexes;
-		private int                   _level;
-		private Point                 _position;
-		private int                   _size;
-		private RootNode              _root;
-		private Terrain               _terrain;
-        private Point                 _midPoint;
-        private bool                  _visible;
+        private GraphicsDevice    _device;
+		private SplattingVertex[] _vertexBuffer;
+		private int[]             _allIndexes;
+		private int               _level;
+		private Point             _position;
+		private int               _size;
+		private RootNode          _root;
+		private Terrain           _terrain;
+        private Point             _midPoint;
+        private bool              _visible;
 
-        public VertexBuffer           Buffer;
+        public VertexBuffer       Buffer;
+        public IndexBuffer        IndexBuffer;
 
 		internal Patch(Terrain terrain, int size, Point position)
 		{
@@ -51,9 +53,7 @@ namespace Laan.DLOD
             _midPoint.X *= _size * _terrain._scale;
             _midPoint.Y *= _size * _terrain._scale;
 
-            float texture = _terrain.Height / 1;
-
-            _vertexBuffer = new VertexPositionNormalTexture[_size * _size];
+            _vertexBuffer = new SplattingVertex[_size * _size];
             for(int y = 0; y < _size; y++)
 				for(int x = 0; x < _size; x++)
 				{
@@ -63,11 +63,11 @@ namespace Laan.DLOD
                     );
 
                     _vertexBuffer[x + y * _size] =
-                        new VertexPositionNormalTexture(
+                        new SplattingVertex(
                             new Vector3(p.X, p.Y, _terrain.HeightAt(p)),
-                            //_terrain.ColorAt(p)
-                            new Vector3(0, 0, 1),
-                            new Vector2(((float)p.X) / texture, ((float)p.Y) / texture)
+                            new Vector2(((float)p.X) / _terrain.Height, ((float)p.Y) / _terrain.Height),
+                            new Vector2((float)x / _size, ((float)y / _size)),
+                            new Vector3(0, 0, 1)
                         );
 				}
 
@@ -99,13 +99,14 @@ namespace Laan.DLOD
 
         internal void InitialiseBuffer(GraphicsDevice device)
         {
+            _device = device;
             Buffer = new VertexBuffer(
                 device,
-                VertexPositionNormalTexture.SizeInBytes * VertexBuffer.Length,
+                SplattingVertex.SizeInBytes * VertexBuffer.Length,
                 ResourceUsage.WriteOnly,
                 ResourceManagementMode.Automatic
                     );
-            Buffer.SetData<VertexPositionNormalTexture>(VertexBuffer);
+            Buffer.SetData<SplattingVertex>(VertexBuffer);
         }
 
         private double distance;
@@ -161,7 +162,7 @@ namespace Laan.DLOD
 			get { return _terrain; }
 		}
 
-        public VertexPositionNormalTexture[] VertexBuffer
+        public SplattingVertex[] VertexBuffer
 		{
 			get { return _vertexBuffer; }
 		}
@@ -170,24 +171,6 @@ namespace Laan.DLOD
         {
             get { return _vertexBuffer.Length; }
         }
-
-        public int[] IndexBuffer
-		{
-			get {
-                //if (_levelChanged || _allIndexes == null)
-                {
-//                    Trace.WriteLine(String.Format("{0}: {1}", _position, Level));
-                    int[] _indexes = new int[10000];
-                    int pos = 0;
-                    _root.CalcAllIndexes(ref pos, ref _indexes);
-
-                    _allIndexes = new int[pos];
-                    Array.ConstrainedCopy(_indexes, 0, _allIndexes, 0, pos);
-
-                }
-                return _allIndexes;
-			}
-		}
 
         public bool Visible
         {
@@ -204,8 +187,8 @@ namespace Laan.DLOD
         public override string ToString()
         {
             return String.Format(
-                "P: {0}/{1} d: {2:0.0} L: {3}", 
-                _position, _midPoint, distance, Level
+                "P: {0}/{1} d: {2:0.0} L: {3} C: {4}", 
+                _position, _midPoint, distance, Level, _allIndexes.Length
             );
         }
 
@@ -213,6 +196,32 @@ namespace Laan.DLOD
         {
             // recalculate the entire patch if the level changes
             _root.Initialize();
+
+            int[] _indexes = new int[10000];
+            int pos = 0;
+            _root.CalcAllIndexes(ref pos, ref _indexes);
+
+            _allIndexes = new int[pos];
+            Array.ConstrainedCopy(_indexes, 0, _allIndexes, 0, pos);
+
+            if (_device != null)
+            {
+                IndexBuffer = new IndexBuffer(
+                _device, typeof(int),
+                _allIndexes.Length,
+                ResourceUsage.WriteOnly,
+                ResourceManagementMode.Automatic
+                );
+                IndexBuffer.SetData<int>(_allIndexes);
+            }
+        }
+
+        internal int IndexBufferLength
+        {
+            get
+            {
+                return _allIndexes.Length;
+            }
         }
 
 		internal int Level

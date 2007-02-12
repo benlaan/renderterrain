@@ -50,16 +50,13 @@ namespace Laan.DLOD
             _terrain = new Terrain(this, heightMap, patchWidth);
             _camera = new Camera(_terrain, this, _terrain.Height);
             _terrain.Camera = _camera;
-            this.Components.Add(_terrain);
+            fontCourierNew = new BitmapFont(@"..\..\..\Content\courier12.xml", this);
+
+            this.Components.Add(fontCourierNew);
             this.Components.Add(_camera);
+            this.Components.Add(_terrain);
             this.Components.Add(new FrameRate(this, fpsPosition));
             this.Components.Add(new Grid(this, _camera));
-
-            fontCourierNew = new BitmapFont(@"..\..\..\Content\courier12.xml", this);
-            this.Components.Add(fontCourierNew);
-
-            //DebugForm form = new DebugForm(_terrain.PatchesPerRow);
-            //form.Show();
 
             base.Initialize();
         }
@@ -118,10 +115,8 @@ namespace Laan.DLOD
         protected override void Draw(GameTime gameTime)
         {
             graphics.GraphicsDevice.Clear(Color.CornflowerBlue);
-
-            fontCourierNew.TextBox(new Rectangle(0, 0, 500, 100), Color.White, _camera.ToString());
-
             base.Draw(gameTime);
+            fontCourierNew.TextBox(new Rectangle(0, 0, 500, 100), Color.White, _camera.ToString());
         }
     }
 }
