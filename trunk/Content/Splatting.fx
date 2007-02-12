@@ -80,8 +80,8 @@ float4 Shader(PS_INPUT input) : COLOR0
     // sample textures
     vector a = tex2D(alphaTextureSampler, input.Texcoord0);
     vector b = tex2D(waterTextureSampler, input.Texcoord1);
-    vector i = tex2D(dirtTextureSampler, input.Texcoord1);
-    vector j = tex2D(grassTextureSampler, input.Texcoord1);
+    vector i = tex2D(grassTextureSampler, input.Texcoord1);
+    vector j = tex2D(dirtTextureSampler, input.Texcoord1);
     vector k = tex2D(stoneTextureSampler, input.Texcoord1);
 
     // combine texel colors
