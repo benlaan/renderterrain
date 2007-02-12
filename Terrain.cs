@@ -41,7 +41,7 @@ namespace Laan.DLOD
 
 		public Terrain(Game game, string heightMapName, int patchWidth) : base(game)
         {
-            _scale = 5;
+            _scale = 7;
 			_patchWidth = patchWidth;
 			_heightMap = new System.Drawing.Bitmap(heightMapName);
 
@@ -78,7 +78,7 @@ namespace Laan.DLOD
             GenerateHeightField();
         }
 
-        private int[] heightThreshold = new int[] { 46, 100, 190, 250 };
+        private int[] heightThreshold = new int[] { 145, 160, 200, 250 };
 
         internal int Threshold(float height)
         {
@@ -262,7 +262,7 @@ namespace Laan.DLOD
 
             UpdatePatches();
 
-            GenerateNormalMap();
+            //GenerateNormalMap();
 
             for (int y = 0; y < _patchesPerRow; y++)
                 for (int x = 0; x < _patchesPerRow; x++)
@@ -384,12 +384,13 @@ namespace Laan.DLOD
 
             base.Draw(gameTime);
         }
+
         internal float HeightAt(System.Drawing.Point offset)
         {
-            float h = _heightField[offset.X, offset.Y] * _scaleHeights;
-            //if (h < 20)
-            //    h = 20;
-            return h;
+            float h = _heightField[offset.X, offset.Y];
+            if (h < heightThreshold[0])
+                h = heightThreshold[0];
+            return h *_scaleHeights;
         }
 
         private bool IsWholeNumber(double value)

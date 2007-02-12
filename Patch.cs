@@ -22,6 +22,8 @@ namespace Laan.DLOD
 
 		public int ID = Count++;
 
+
+        private int               _levelBias = 1;
         private GraphicsDevice    _device;
 		private SplattingVertex[] _vertexBuffer;
 		private int[]             _allIndexes;
@@ -40,6 +42,7 @@ namespace Laan.DLOD
 		{
 			// by default, all patches have zero level - this will be updated each frame
 			_level = 0;
+            _levelBias = Int32.Parse(ConfigurationSettings.AppSettings["patchLevelBias"]);
 
 			_terrain = terrain;
 			_position = position;
@@ -116,7 +119,7 @@ namespace Laan.DLOD
             Point capped = new Point((int)camera.LookAt.X, (int)camera.LookAt.Y);
             distance = _terrain.Distance(_midPoint, capped);
 
-            Level = 1 + (int)(Math.Round(
+            Level = _levelBias + (int)(Math.Round(
                 ((_terrain.MaxDistance - distance) / _terrain.MaxDistance) * _terrain.MaxPatchDepth,
                 MidpointRounding.AwayFromZero));
 		}
