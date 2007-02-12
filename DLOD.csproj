@@ -18,7 +18,7 @@
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|x86' ">
     <DebugSymbols>true</DebugSymbols>
     <DebugType>full</DebugType>
-    <Optimize>false</Optimize>
+    <Optimize>true</Optimize>
     <OutputPath>bin\x86\Debug</OutputPath>
     <DefineConstants>DEBUG;TRACE</DefineConstants>
     <ErrorReport>prompt</ErrorReport>
@@ -26,6 +26,7 @@
     <NoStdLib>true</NoStdLib>
     <UseVSHostingProcess>false</UseVSHostingProcess>
     <PlatformTarget>x86</PlatformTarget>
+    <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|x86' ">
     <DebugType>pdbonly</DebugType>
@@ -57,9 +58,9 @@
       <XNAUseContentPipeline>false</XNAUseContentPipeline>
       <Name>BitmapFont</Name>
     </Compile>
-    <Compile Include="Bitmap.cs">
+    <Compile Include="FastBitmap.cs">
       <XNAUseContentPipeline>false</XNAUseContentPipeline>
-      <Name>Bitmap</Name>
+      <Name>FastBitmap</Name>
     </Compile>
     <Compile Include="SplattingVertex.cs">
       <XNAUseContentPipeline>false</XNAUseContentPipeline>

@@ -116,7 +116,8 @@ namespace Laan.DLOD
         {
             graphics.GraphicsDevice.Clear(Color.CornflowerBlue);
             base.Draw(gameTime);
-            fontCourierNew.TextBox(new Rectangle(0, 0, 500, 100), Color.White, _camera.ToString());
+            string output = _camera.ToString() + "\n" + _terrain.ToString();
+            fontCourierNew.TextBox(new Rectangle(0, 0, 500, 100), Color.White, output);
         }
     }
 }

@@ -41,12 +41,12 @@ namespace Laan.DLOD
         /// </summary>
         private void Reset()
         {
-            //_cameraPosition = new Vector3(0, size / -2.0f, size);
-            //_lookAt = new Vector3(0, 0, size / -4.0f);
+            //_cameraPosition = new Vector3(_size / -2.0f, _size / -2.0f, _size * 8);
+            //_lookAt = new Vector3(0, 0, _size / -4.0f);
             //_cameraUpVector = new Vector3(0, 0, 1);
-            
+
             _cameraPosition = new Vector3(_size / -2.0f, _size / -2.0f, _size * 8);
-            _lookAt = new Vector3(0, 0, _size / -4.0f);
+            _lookAt = new Vector3(0, 0, _size * 4);
             _cameraUpVector = new Vector3(0, 0, 1);
         }
 
@@ -75,6 +75,14 @@ namespace Laan.DLOD
             Vector3 change = new Vector3();
             int scale = 1;
 
+            if (keyboardState.IsKeyDown(Keys.Insert))
+            {
+                _cameraPosition.Z += 50 * _terrain._scale;
+            }
+            if (keyboardState.IsKeyDown(Keys.Delete))
+            {
+                _cameraPosition.Z -= 50 * _terrain._scale;
+            }
             if (keyboardState.IsKeyDown(Keys.LeftShift))
             {
                 scale = 5;
