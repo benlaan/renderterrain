@@ -33,6 +33,9 @@ namespace Laan.DLOD
         private float[,]              _heightField;
         private float                 _scaleHeights;
 
+        private int                   indexCount;
+        private int                   vertexCount;
+
         private Texture2D             dirtTexture;
         private Texture2D             waterTexture;
         private Texture2D             stoneTexture;
@@ -74,7 +77,6 @@ namespace Laan.DLOD
                 new Point(half, half)
             ) * _scale / 2;
 
-            _scaleHeights = (_height / 5f) / 255.0f;
             GenerateHeightField();
         }
 
@@ -118,11 +120,26 @@ namespace Laan.DLOD
         {
             Trace.WriteLine("Generating Texture");
             System.Drawing.Bitmap bitmap = new System.Drawing.Bitmap(_height + 1, _height + 1);
-            for (int y = 0; y < _height; y++)
-                for (int x = 0; x < _height; x++)
+
+            using (Laan.Drawing.FastBitmap fast = new Laan.Drawing.FastBitmap(bitmap))
+            {
+                fast.LockBitmap();
+                try
                 {
-                    bitmap.SetPixel(x,y, SampleRange(x, y)); 
+
+                    for (int y = 0; y < _height; y++)
+                        for (int x = 0; x < _height; x++)
+                        {
+
+                            Laan.Drawing.PixelData pixel = new Laan.Drawing.PixelData(SampleRange(x, y));
+                            fast.SetPixel(x, y, pixel);
+                        }
                 }
+                finally
+                {
+                    fast.UnlockBitmap();
+                }
+            }
 
             using (System.IO.MemoryStream stream = new System.IO.MemoryStream())
             {
@@ -133,67 +150,30 @@ namespace Laan.DLOD
             };
         }
 
-        //private void GenerateHeightField()
-        //{
-        //    Trace.WriteLine("Loading HeightMap");
-
-        //    _heightField = new float[_height + 1, _height + 1];
-        //    _scaleHeights = (_height / 5f) / 255.0f;
-
-        //    for (int y = 0; y < _height; y++)
-        //        for (int x = 0; x < _height; x++)
-        //            _heightField[x, y] = _heightMap.PixelData[x, y];
-
-        //    // no longer required..
-        //    _heightMap = null;
-        //}
-
-        void GenerateHeightField()
+        private void GenerateHeightField()
         {
             Trace.WriteLine("Loading HeightMap");
-
-            _heightField = new float[_height + 1, _height + 1];
-            for (int y = 0; y < _height; y++)
-                for (int x = 0; x < _height; x++)
+            using (Laan.Drawing.FastBitmap fast = new Laan.Drawing.FastBitmap(_heightMap))
+            {
+                fast.LockBitmap();
+                try
                 {
-                    _heightField[x, y] = (float)_heightMap.GetPixel(x, y).R;
+                    _scaleHeights = (_height / 5f) / 255.0f;
+                    _heightField = new float[_height + 1, _height + 1];
+
+                    for (int y = 0; y < _height; y++)
+                        for (int x = 0; x < _height; x++)
+                        {
+                            Laan.Drawing.PixelData pixel = fast.GetPixel(x, y);
+                            _heightField[x, y] = pixel.Red;
+                        }
                 }
+                finally
+                {
+                    fast.UnlockBitmap();
+                }
+            }
         }
-
-        //private void GenerateHeightField()
-        //{
-        //    Trace.WriteLine("Loading HeightMap");
-
-        //    _heightField = new float[_height + 1, _height + 1];
-        //    _scaleHeights = (_height / 5f) / 255.0f;
-
-        //    BitmapData data = _heightMap.LockBits(
-        //        new System.Drawing.Rectangle(0, 0, _heightMap.Height, _heightMap.Width),
-        //        ImageLockMode.ReadOnly,
-        //        PixelFormat.Format32bppArgb
-        //    );
-        //    try
-        //    {
-        //        // Declare an array to hold the bytes of the bitmap.
-        //        // This code is specific to a bitmap with 24 bits per pixels.
-        //        int bytes = Height * Height * 3;
-        //        byte[] rgbValues = new byte[bytes];
-        //        IntPtr ptr = data.Scan0;
-        //        System.Runtime.InteropServices.Marshal.Copy(ptr, rgbValues, 0, bytes);
-
-        //        for (int y = 0; y < _height; y++)
-        //            for (int x = 0; x < _height; x++)
-        //            {
-        //                _heightField[x, y] = rgbValues[3 * (y * Height + x)];
-        //            }
-        //    }
-        //    finally
-        //    {
-        //        _heightMap.UnlockBits(data);
-        //        _heightMap.Dispose();
-        //        _heightMap = null;
-        //    }
-        //}
 
         private void GenerateNormalMap()
         {
@@ -309,9 +289,15 @@ namespace Laan.DLOD
                 for (int x = 0; x < _patchesPerRow; x++)
                     _patches[x, y].Update(_camera);
 
+            indexCount = 0;
+            vertexCount = 0;
             for (int y = 0; y < _patchesPerRow; y++)
                 for (int x = 0; x < _patchesPerRow; x++)
+                {
                     _patches[x, y].Recalculate();
+                    indexCount += _patches[x, y].IndexBufferLength;
+                    vertexCount += _patches[x, y].VerticesCount;
+                }
         }
 
         private void RecalculatePatches()
@@ -430,6 +416,11 @@ namespace Laan.DLOD
         public double MaxDistance
         {
             get { return _maxDistance; }
+        }
+
+        public override string ToString()
+        {
+            return String.Format("Indices:  {0}\nVertices: {1}", indexCount, vertexCount);
         }
 
     }
