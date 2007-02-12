@@ -9,3 +9,14 @@ bin\x86\Debug\Content\dirt.xnb
 bin\x86\Debug\Content\grass.xnb
 bin\x86\Debug\Content\stone.xnb
 bin\x86\Debug\Content\water.xnb
+bin\x86\Release\Content\dirt.xnb
+bin\x86\Release\Content\grass.xnb
+bin\x86\Release\Content\stone.xnb
+bin\x86\Release\Content\water.xnb
+bin\x86\Release\Content\Splatting.xnb
+bin\x86\Release\DLOD.exe.config
+bin\x86\Release\DLOD.exe
+bin\x86\Release\DLOD.pdb
+obj\x86\Release\ResolveAssemblyReference.cache
+obj\x86\Release\DLOD.exe
+obj\x86\Release\DLOD.pdb

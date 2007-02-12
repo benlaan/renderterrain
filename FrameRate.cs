@@ -21,7 +21,6 @@ namespace Laan.DLOD
         private bool showDecimals;
         private BitmapFont fontCourierNew;
         private Point _point;
-
         
         public FrameRate(Game game, Point point) : base(game)
         {
@@ -40,9 +39,8 @@ namespace Laan.DLOD
             this.windowTitle = this.Game != null ? this.Game.Window.Title : String.Empty;
 
             fontCourierNew = new BitmapFont(@"..\..\..\Content\courier12.xml", this.Game);
-            //this.Game.Components.Add(fontCourierNew);
-            fontCourierNew.Initialize();
             base.Initialize();
+            fontCourierNew.Initialize();
         }
 
         public double Current
@@ -92,10 +90,7 @@ namespace Laan.DLOD
         {
             if (loadAllContent)
             {
-                //fontCourierNew.Reset(GraphicsDevice);
             }
-
-            // TODO: Load any ResourceManagementMode.Manual content
         }
 
         /// <summary>
@@ -118,15 +113,13 @@ namespace Laan.DLOD
                 this.deltaFPSTime -= 1000;
             }
             
+            fontCourierNew.Update(gameTime);
             base.Update(gameTime);
         }
 
         /// <summary>
         /// Called when the gamecomponent needs to be drawn.
         /// </summary>
-        /// <remarks>
-        /// Currently, the framerate is shown in the window's title of the game.
-        /// </remarks>
         public override void Draw(GameTime gameTime)
         {
             // If the framerate can be drawn, it is shown in the window's title of the game.
@@ -135,9 +128,10 @@ namespace Laan.DLOD
                     this.currentFramerate.ToString(this.displayFormat) : 
                     ((int)this.currentFramerate).ToString("D");
 
-                                this.Game.Window.Title =  "FPS: " + currentFramerateString;
+                this.Game.Window.Title =  "FPS: " + currentFramerateString;
                 fontCourierNew.DrawString(_point.X, _point.Y, Color.White, "FPS: " + currentFramerateString);
             }
+            base.Draw(gameTime);
         }
     }
 }

@@ -21,7 +21,6 @@ namespace Laan.DLOD
         internal Patch[,]             _patches;
         internal int                  _scale;
 
-        //private BasicEffect _effect;
         private Effect                _effect;
         private System.Drawing.Bitmap   _heightMap;
         private int                   _maxPatchDepth;
@@ -75,6 +74,7 @@ namespace Laan.DLOD
                 new Point(half, half)
             ) * _scale / 2;
 
+            _scaleHeights = (_height / 5f) / 255.0f;
             GenerateHeightField();
         }
 
@@ -245,7 +245,6 @@ namespace Laan.DLOD
             Trace.WriteLine("Compiling Effect File");
             CompiledEffect compiledEffect = 
                 Effect.CompileEffectFromFile(
-                //"@/../../../../TerrainLighting.fx", 
                    @"../../../Content/Splatting.fx", 
                     null, null, 
                     CompilerOptions.None, 
@@ -254,6 +253,7 @@ namespace Laan.DLOD
 
             _effect = new Effect(_device, compiledEffect.GetEffectCode(), CompilerOptions.None, null);
             _effect.CurrentTechnique = _effect.Techniques["TextureSplatting"];
+            
             _effect.Parameters["alphaTexture"].SetValue(alphaTexture);
             _effect.Parameters["dirtTexture"].SetValue(dirtTexture);
             _effect.Parameters["grassTexture"].SetValue(grassTexture);
@@ -267,6 +267,8 @@ namespace Laan.DLOD
             for (int y = 0; y < _patchesPerRow; y++)
                 for (int x = 0; x < _patchesPerRow; x++)
                     _patches[x, y].InitialiseBuffer(_device);
+
+            RecalculatePatches();
         }
 
         /// <summary>
@@ -281,7 +283,7 @@ namespace Laan.DLOD
             {
                 _wireFrame = !_wireFrame;
             }
-            
+
             if (keyboardState.IsKeyDown(Keys.Space))
             {
                 int count = 0;
@@ -294,8 +296,10 @@ namespace Laan.DLOD
             }
 
             if (_camera.Moved)
+            {
                 UpdatePatches();
-
+                RecalculatePatches();
+            }
             base.Update(gameTime);
         }
 
@@ -310,8 +314,15 @@ namespace Laan.DLOD
                     _patches[x, y].Recalculate();
         }
 
+        private void RecalculatePatches()
+        {
+            for (int y = 0; y < _patchesPerRow; y++)
+                for (int x = 0; x < _patchesPerRow; x++)
+                    _patches[x, y].Recalculate();
+        }
+
         /// <summary>
-        /// Allows the game component to update itself.
+        /// Allows the game component to draw itself.
         /// </summary>
         /// <param name="gameTime">Provides a snapshot of timing values.</param>
         public override void Draw(GameTime gameTime)
@@ -322,15 +333,17 @@ namespace Laan.DLOD
             else
                 _device.RenderState.FillMode = FillMode.Solid;
 
+            string technique = _wireFrame ? "WireFrame" : "TextureSplatting";
+            _effect.CurrentTechnique = _effect.Techniques[technique];
+
             _device.RenderState.CullMode = CullMode.CullCounterClockwiseFace;
-//            _device.Clear(Color.DarkSlateBlue);
 
             Matrix worldMatrix = Matrix.Identity;
             int offset = -1 * (_height / 2);
             worldMatrix = Matrix.CreateTranslation(new Vector3(offset, offset, 1));
             worldMatrix *= Matrix.CreateScale(new Vector3(_scale, _scale, _scale));
 
-            _effect.Parameters["xViewProjection"].SetValue(worldMatrix * _camera.View * _camera.Projection);
+            _effect.Parameters["ViewProjection"].SetValue(worldMatrix * _camera.View * _camera.Projection);
 
             _effect.Begin();
             foreach (EffectPass pass in _effect.CurrentTechnique.Passes)
@@ -346,32 +359,20 @@ namespace Laan.DLOD
                         if (p.Visible)
                         {
                             _device.VertexDeclaration = new VertexDeclaration(
-                                _device, 
-                                VertexPositionNormalTexture.VertexElements
+                                _device, SplattingVertex.VertexElements
                             );
-                            _device.Vertices[0].SetSource(
-                                p.Buffer, 0, VertexPositionNormalTexture.SizeInBytes
-                            );
-
-                            using (IndexBuffer ib = new IndexBuffer(
-                                _device, typeof(int),
-                                p.IndexBuffer.Length,
-                                ResourceUsage.WriteOnly,
-                                ResourceManagementMode.Automatic))
+                            _device.Vertices[0].SetSource(p.Buffer, 0, SplattingVertex.SizeInBytes);
+                            _device.Indices = p.IndexBuffer;
+                            try
                             {
-                                ib.SetData<int>(p.IndexBuffer);
-                                _device.Indices = ib;
-                                try
-                                {
-                                    _device.DrawIndexedPrimitives(
-                                        PrimitiveType.TriangleList,
-                                        0, 0, p.VerticesCount,
-                                        0, p.IndexBuffer.Length / 3
-                                    );
-                                }
-                                catch (Exception)
-                                {
-                                }
+                                _device.DrawIndexedPrimitives(
+                                    PrimitiveType.TriangleList,
+                                    0, 0, p.VerticesCount,
+                                    0, p.IndexBufferLength / 3
+                                );
+                            }
+                            catch (Exception)
+                            {
                             }
                         }
                     }

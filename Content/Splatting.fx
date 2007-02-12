@@ -1,47 +1,35 @@
-float4x4 xViewProjection;
-float3 LightDirection = float3( 0.0f, 0.0f, 1.0f );
-float4 Ambient        = float4( 0.3, 0.3, 0.3, 1.0 );
-float4 Diffuse        = float4( 0.8, 0.8, 0.8, 1.0 );
+float4x4 ViewProjection;
+float3   LightDirection = float3( 0.0f, 0.0f, 1.0f );
+float4   Ambient        = float4( 0.3, 0.3, 0.3, 1.0 );
+float4   Diffuse        = float4( 0.8, 0.8, 0.8, 1.0 );
 
-Texture               dirtTexture;
-Texture               waterTexture;
-Texture               stoneTexture;
-Texture               grassTexture;
-Texture               alphaTexture;
-
-
-//struct PixelToFrame
-//{
-//    float4 Color : COLOR0;
-//};
-
-//struct VertexToPixel
-//{
-//    float4 Position  : POSITION;
-//    float4 Texcoord : TEXCOORD0;
-//    float3 Normal    : NORMAL0;
-//};
+Texture  dirtTexture;
+Texture  waterTexture;
+Texture  stoneTexture;
+Texture  grassTexture;
+Texture  alphaTexture;
 
 struct VS_INPUT
 {
-    float4 Position : POSITION0;
-    float2 Texcoord : TEXCOORD0;
-    float3 Normal   : NORMAL0;
+    float4 Position  : POSITION0;
+    float2 Texcoord0 : TEXCOORD0;
+    float2 Texcoord1 : TEXCOORD1;
+    float3 Normal    : NORMAL0;
 };
 
 struct VS_OUTPUT
 {
     float4 Position  : POSITION0;
-    float2 Texcoord  : TEXCOORD0;
-    float3 Normal    : TEXCOORD1;
-    float4 Color     : COLOR0;
+    float2 Texcoord0 : TEXCOORD0;
+    float2 Texcoord1 : TEXCOORD1;
+    float3 Normal    : TEXCOORD2;
 };
 
 struct PS_INPUT
 {
-	float4 Color    : COLOR0;
-    float2 Texcoord : TEXCOORD0;
-    float3 Normal   : TEXCOORD1;
+    float2 Texcoord0 : TEXCOORD0;
+    float2 Texcoord1 : TEXCOORD1;
+    float3 Normal    : TEXCOORD2;
 };
 
 sampler dirtTextureSampler = sampler_state 
@@ -78,8 +66,9 @@ VS_OUTPUT Transform(VS_INPUT input)
 {
     VS_OUTPUT output = (VS_OUTPUT)0;
     
-    output.Position  = mul(input.Position, xViewProjection);
-    output.Texcoord = input.Texcoord;
+    output.Position  = mul(input.Position, ViewProjection);
+    output.Texcoord0 = input.Texcoord0;
+    output.Texcoord1 = input.Texcoord1;
     output.Normal = input.Normal;
 
     return output;  
@@ -89,11 +78,11 @@ float4 Shader(PS_INPUT input) : COLOR0
 {
 	
     // sample textures
-    vector b = tex2D(waterTextureSampler, input.Texcoord);
-    vector a = tex2D(alphaTextureSampler, input.Texcoord);
-    vector i = tex2D(dirtTextureSampler, input.Texcoord);
-    vector j = tex2D(grassTextureSampler, input.Texcoord);
-    vector k = tex2D(stoneTextureSampler, input.Texcoord);
+    vector a = tex2D(alphaTextureSampler, input.Texcoord0);
+    vector b = tex2D(waterTextureSampler, input.Texcoord1);
+    vector i = tex2D(dirtTextureSampler, input.Texcoord1);
+    vector j = tex2D(grassTextureSampler, input.Texcoord1);
+    vector k = tex2D(stoneTextureSampler, input.Texcoord1);
 
     // combine texel colors
     float4 oneminusx = 1.0 - a.x;
@@ -103,12 +92,17 @@ float4 Shader(PS_INPUT input) : COLOR0
     vector m = a.y * j + oneminusy * l;
     vector n = a.z * k + oneminusz * m;
 
-    float  DotProduct   = dot( input.Normal, LightDirection );
-    float4 TotalDiffuse = saturate( Diffuse * DotProduct );
-    float4 Color = n * saturate( Ambient + TotalDiffuse );
-    Color[3] = n[3];
+    float  DotProduct   = dot(input.Normal, LightDirection);
+    float4 TotalDiffuse = saturate(Diffuse * DotProduct);
+    float4 Color        = n * saturate(Ambient + TotalDiffuse);
+    Color[3]            = n[3];
 
 	return Color;
+}
+
+float4 WireFrame(PS_INPUT input) : COLOR0
+{
+    return 255;
 }
 
 technique TextureSplatting
@@ -116,6 +110,15 @@ technique TextureSplatting
     pass Pass0
     {        
         VertexShader = compile vs_1_1 Transform();
-        PixelShader = compile ps_2_0 Shader();
+        PixelShader = compile  ps_2_0 Shader();
+    }
+}
+
+technique WireFrame
+{
+    pass Pass0
+    {        
+        VertexShader = compile vs_1_1 Transform();
+        PixelShader = compile  ps_2_0 WireFrame();
     }
 }

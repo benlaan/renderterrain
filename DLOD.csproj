@@ -39,8 +39,8 @@
     <PlatformTarget>x86</PlatformTarget>
   </PropertyGroup>
   <ItemGroup>
-    <Reference Include="Microsoft.Xna.Framework, Version=1.0.0.0, Culture=neutral, PublicKeyToken=f48fa5f25d27e8ff, processorArchitecture=x86" />
-    <Reference Include="Microsoft.Xna.Framework.Game, Version=1.0.0.0, Culture=neutral, PublicKeyToken=f48fa5f25d27e8ff, processorArchitecture=MSIL" />
+    <Reference Include="Microsoft.Xna.Framework, Version=1.0.0.0, Culture=neutral, PublicKeyToken=6d5c3888ef60e27d, processorArchitecture=x86" />
+    <Reference Include="Microsoft.Xna.Framework.Game, Version=1.0.0.0, Culture=neutral, PublicKeyToken=6d5c3888ef60e27d, processorArchitecture=MSIL" />
     <Reference Include="mscorlib">
       <Private>False</Private>
     </Reference>
@@ -60,6 +60,10 @@
     <Compile Include="Bitmap.cs">
       <XNAUseContentPipeline>false</XNAUseContentPipeline>
       <Name>Bitmap</Name>
+    </Compile>
+    <Compile Include="SplattingVertex.cs">
+      <XNAUseContentPipeline>false</XNAUseContentPipeline>
+      <Name>SplattingVertex</Name>
     </Compile>
     <Compile Include="FrameRate.cs">
       <XNAUseContentPipeline>false</XNAUseContentPipeline>
