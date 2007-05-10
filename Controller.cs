@@ -56,7 +56,7 @@ namespace Laan.DLOD
             this.Components.Add(_camera);
             this.Components.Add(_terrain);
             this.Components.Add(new FrameRate(this, fpsPosition));
-            this.Components.Add(new Grid(this, _camera));
+//            this.Components.Add(new Grid(this, _camera));
 
             base.Initialize();
         }

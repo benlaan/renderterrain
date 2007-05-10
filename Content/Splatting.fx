@@ -34,32 +34,32 @@ struct PS_INPUT
 
 sampler dirtTextureSampler = sampler_state 
 { 
-	texture = <dirtTexture>; 
-	mipfilter = LINEAR; 
+    texture = <dirtTexture>; 
+    mipfilter = LINEAR; 
 };
 
 sampler waterTextureSampler = sampler_state 
 { 
-	texture = <waterTexture>; 
-	mipfilter = LINEAR; 
+    texture = <waterTexture>; 
+    mipfilter = LINEAR; 
 };
 
 sampler grassTextureSampler = sampler_state 
 { 
-	texture = <grassTexture>; 
-	mipfilter = LINEAR; 
+    texture = <grassTexture>; 
+    mipfilter = LINEAR; 
 };
 
 sampler stoneTextureSampler = sampler_state 
 { 
-	texture = <stoneTexture>; 
-	mipfilter = LINEAR; 
+    texture = <stoneTexture>; 
+    mipfilter = LINEAR; 
 };
 
 sampler alphaTextureSampler = sampler_state 
 { 
-	texture = <alphaTexture>; 
-	mipfilter = LINEAR; 
+    texture = <alphaTexture>; 
+    mipfilter = LINEAR; 
 };
 
 VS_OUTPUT Transform(VS_INPUT input)
@@ -76,7 +76,7 @@ VS_OUTPUT Transform(VS_INPUT input)
 
 float4 Shader(PS_INPUT input) : COLOR0
 {
-	
+    
     // sample textures
     vector a = tex2D(alphaTextureSampler, input.Texcoord0);
     vector b = tex2D(waterTextureSampler, input.Texcoord1);
@@ -97,7 +97,9 @@ float4 Shader(PS_INPUT input) : COLOR0
     float4 Color        = n * saturate(Ambient + TotalDiffuse);
     Color[3]            = n[3];
 
-	return Color;
+    return Color;
+
+//    return n;
 }
 
 float4 WireFrame(PS_INPUT input) : COLOR0
