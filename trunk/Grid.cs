@@ -90,7 +90,10 @@ namespace Laan.DLOD
             {
                 pass.Begin();
 
-                _device.VertexDeclaration = new VertexDeclaration(_device, VertexPositionNormalTexture.VertexElements);
+                _device.VertexDeclaration = new VertexDeclaration(
+                        _device, 
+                        VertexPositionNormalTexture.VertexElements
+                );
 
                 VertexBuffer buffer = new VertexBuffer(
                     _device, VertexPositionNormalTexture.SizeInBytes * (pointList.Length),

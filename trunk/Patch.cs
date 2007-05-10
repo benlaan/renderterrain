@@ -7,47 +7,47 @@ using System.Configuration;
 namespace Laan.DLOD
 {
 
-	enum Direction {
-		None,
-		North,
-		South,
-		East,
-		West,
-		Internal
-	};
+    enum Direction {
+        None,
+        North,
+        South,
+        East,
+        West,
+        Internal
+    };
 
-	internal class Patch
-	{
+    internal class Patch
+    {
 
-		public static int Count = 0;
+        public static int Count = 0;
 
-		public int ID = Count++;
+        public int ID = Count++;
 
 
-        private int               _levelBias = 1;
+        private int               _levelBias = -1;
         private GraphicsDevice    _device;
-		private SplattingVertex[] _vertexBuffer;
-		private int[]             _allIndexes;
-		private int               _level;
-		private Point             _position;
-		private int               _size;
-		private RootNode          _root;
-		private Terrain           _terrain;
+        private SplattingVertex[] _vertexBuffer;
+        private int[]             _allIndexes;
+        private int               _level;
+        private Point             _position;
+        private int               _size;
+        private RootNode          _root;
+        private Terrain           _terrain;
         private Point             _midPoint;
         private bool              _visible;
 
         public VertexBuffer       Buffer;
         public IndexBuffer        IndexBuffer;
 
-		internal Patch(Terrain terrain, int size, Point position)
-		{
-			// by default, all patches have zero level - this will be updated each frame
-			_level = 0;
+        internal Patch(Terrain terrain, int size, Point position)
+        {
+            // by default, all patches have zero level - this will be updated each frame
+            _level = 0;
             _levelBias = Int32.Parse(ConfigurationSettings.AppSettings["patchLevelBias"]);
 
-			_terrain = terrain;
-			_position = position;
-			_size = size + 1;
+            _terrain = terrain;
+            _position = position;
+            _size = size + 1;
             _visible = true;
 
             int half = _terrain.PatchesPerRow / 2;
@@ -59,8 +59,8 @@ namespace Laan.DLOD
 
             _vertexBuffer = new SplattingVertex[_size * _size];
             for(int y = 0; y < _size; y++)
-				for(int x = 0; x < _size; x++)
-				{
+                for(int x = 0; x < _size; x++)
+                {
                     System.Drawing.Point p = new System.Drawing.Point(
                         (position.X * (_size - 1)) + x,
                         (position.Y * (_size - 1)) + y
@@ -73,9 +73,9 @@ namespace Laan.DLOD
                             new Vector2((float)x / _size, ((float)y / _size)),
                             new Vector3(0, 0, 1)
                         );
-				}
+                }
 
-			_root = new RootNode(this);      
+            _root = new RootNode(this);      
         }
 
         internal void GenerateNormalMap()
@@ -115,61 +115,62 @@ namespace Laan.DLOD
 
         private double distance;
 
-		public void Update(Camera camera)
-		{
+        public void Update(Camera camera)
+        {
             Point capped = new Point((int)camera.LookAt.X, (int)camera.LookAt.Y);
             distance = _terrain.Distance(_midPoint, capped);
 
-            Level = _levelBias + (int)(Math.Round(
+            Level = //_terrain.MaxPatchDepth / 2;
+                _levelBias + (int)(Math.Round(
                 ((_terrain.MaxDistance - distance) / _terrain.MaxDistance) * _terrain.MaxPatchDepth,
                 MidpointRounding.AwayFromZero));
-		}
+        }
 
-		internal bool HasSibling(Direction direction, ref Patch sibling)
-		{
+        internal bool HasSibling(Direction direction, ref Patch sibling)
+        {
             System.Drawing.Point siblingPos = new System.Drawing.Point(_position.X, _position.Y);
 
-			switch (direction)
-			{
-			  case Direction.North:
-				siblingPos.Y++;
-				break;
-			  case Direction.South:
-				siblingPos.Y--;
-				break;
-			  case Direction.East:
-				siblingPos.X++;
-				break;
-			  case Direction.West:
-				siblingPos.X--;
-				break;
-			}
+            switch (direction)
+            {
+              case Direction.North:
+                siblingPos.Y++;
+                break;
+              case Direction.South:
+                siblingPos.Y--;
+                break;
+              case Direction.East:
+                siblingPos.X++;
+                break;
+              case Direction.West:
+                siblingPos.X--;
+                break;
+            }
 
             if (siblingPos.X >= 0 &&
                siblingPos.Y >= 0 &&
                siblingPos.X < _terrain.PatchesPerRow &&
                siblingPos.Y < _terrain.PatchesPerRow)
             {
-			   sibling = _terrain._patches[siblingPos.X, siblingPos.Y];
-			}
-			return (sibling != null);
-		}
+               sibling = _terrain._patches[siblingPos.X, siblingPos.Y];
+            }
+            return (sibling != null);
+        }
 
-		public RootNode Root
-		{
-			get { return _root; }
-			set { _root = value; }
-		}
+        public RootNode Root
+        {
+            get { return _root; }
+            set { _root = value; }
+        }
 
-		public Terrain Terrain
-		{
-			get { return _terrain; }
-		}
+        public Terrain Terrain
+        {
+            get { return _terrain; }
+        }
 
         public SplattingVertex[] VertexBuffer
-		{
-			get { return _vertexBuffer; }
-		}
+        {
+            get { return _vertexBuffer; }
+        }
 
         public int VerticesCount
         {
@@ -180,7 +181,7 @@ namespace Laan.DLOD
         {
             get
             {
-                return _visible;
+                return true;
             }
             set
             {
@@ -213,7 +214,7 @@ namespace Laan.DLOD
                 IndexBuffer = new IndexBuffer(
                 _device, typeof(int),
                 _allIndexes.Length,
-                ResourceUsage.WriteOnly,
+                ResourceUsage.Dynamic,
                 ResourceManagementMode.Automatic
                 );
                 IndexBuffer.SetData<int>(_allIndexes);
@@ -228,20 +229,20 @@ namespace Laan.DLOD
             }
         }
 
-		internal int Level
-		{
-			get { return _level; }
-			set {
+        internal int Level
+        {
+            get { return _level; }
+            set {
                 // ensure the patch level doesn't exceed the terrain's max
                 _level = Math.Max(0, Math.Min(value, _terrain.MaxPatchDepth));
-			}
-		}
+            }
+        }
 
 
-		internal int Size
-		{
-			get { return _size; }
-			set { _size = value; }
-		}
-	}
+        internal int Size
+        {
+            get { return _size; }
+            set { _size = value; }
+        }
+    }
 }

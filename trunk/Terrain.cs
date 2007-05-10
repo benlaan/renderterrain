@@ -42,34 +42,34 @@ namespace Laan.DLOD
         private Texture2D             grassTexture;
         private Texture2D             alphaTexture;
 
-		public Terrain(Game game, string heightMapName, int patchWidth) : base(game)
+        public Terrain(Game game, string heightMapName, int patchWidth) : base(game)
         {
             _scale = 7;
-			_patchWidth = patchWidth;
-			_heightMap = new System.Drawing.Bitmap(heightMapName);
+            _patchWidth = patchWidth;
+            _heightMap = new System.Drawing.Bitmap(heightMapName);
 
-			// Map must be a square
-			if(_heightMap.Height != _heightMap.Width)
-				throw new ArgumentException("Height map must be a square");
+            // Map must be a square
+            if(_heightMap.Height != _heightMap.Width)
+                throw new ArgumentException("Height map must be a square");
 
-			// must be a power of 2 plus 1
-			_height = _heightMap.Height - 1;
-			double log2 = Math.Log(_height, 2);
+            // must be a power of 2 plus 1
+            _height = _heightMap.Height - 1;
+            double log2 = Math.Log(_height, 2);
 
-			// check by ensuring that converting to int has the same value as the
-			// raw double
-			if(!IsWholeNumber(log2))
-				throw new ArgumentException("Height map must be one plus a power of 2 (ie 5, 9, 17, 65, 257, etc.");
+            // check by ensuring that converting to int has the same value as the
+            // raw double
+            if(!IsWholeNumber(log2))
+                throw new ArgumentException("Height map must be one plus a power of 2 (ie 5, 9, 17, 65, 257, etc.");
 
             _maxPatchDepth = 2 + (int)Math.Log(_height / _patchWidth, 2);
 
-			double patchCount = _height / _patchWidth;
+            double patchCount = _height / _patchWidth;
                                                   
-			if(!IsWholeNumber(patchCount))
-				throw new ArgumentException(
-					"PatchLevel incompatable with heightMap - must allow an NxN number of patches");
+            if(!IsWholeNumber(patchCount))
+                throw new ArgumentException(
+                    "PatchLevel incompatable with heightMap - must allow an NxN number of patches");
 
-			_patchesPerRow = (int)patchCount;
+            _patchesPerRow = (int)patchCount;
 
             int half = Height / 2;
             _maxDistance = Distance(
@@ -123,27 +123,14 @@ namespace Laan.DLOD
 
             using (Laan.Drawing.FastBitmap fast = new Laan.Drawing.FastBitmap(bitmap))
             {
-                fast.LockBitmap();
-                try
-                {
-
-                    for (int y = 0; y < _height; y++)
-                        for (int x = 0; x < _height; x++)
-                        {
-
-                            Laan.Drawing.PixelData pixel = new Laan.Drawing.PixelData(SampleRange(x, y));
-                            fast.SetPixel(x, y, pixel);
-                        }
-                }
-                finally
-                {
-                    fast.UnlockBitmap();
-                }
+                for (int y = 0; y < _height; y++)
+                    for (int x = 0; x < _height; x++)
+                        fast.SetPixel(x, y, SampleRange(x, y));
             }
 
             using (System.IO.MemoryStream stream = new System.IO.MemoryStream())
             {
-                bitmap.Save(@"D:\test.png", ImageFormat.Png);
+//                bitmap.Save(@"D:\test.png", ImageFormat.Png);
                 bitmap.Save(stream, ImageFormat.Bmp);
                 stream.Position = 0;
                 return Texture2D.FromFile(GraphicsDevice, stream);
@@ -155,23 +142,12 @@ namespace Laan.DLOD
             Trace.WriteLine("Loading HeightMap");
             using (Laan.Drawing.FastBitmap fast = new Laan.Drawing.FastBitmap(_heightMap))
             {
-                fast.LockBitmap();
-                try
-                {
-                    _scaleHeights = (_height / 5f) / 255.0f;
-                    _heightField = new float[_height + 1, _height + 1];
+                _scaleHeights = (_height / 2550.0f);
+                _heightField = new float[_height + 1, _height + 1];
 
-                    for (int y = 0; y < _height; y++)
-                        for (int x = 0; x < _height; x++)
-                        {
-                            Laan.Drawing.PixelData pixel = fast.GetPixel(x, y);
-                            _heightField[x, y] = pixel.Red;
-                        }
-                }
-                finally
-                {
-                    fast.UnlockBitmap();
-                }
+                for (int y = 0; y < _height; y++)
+                    for (int x = 0; x < _height; x++)
+                        _heightField[x, y] = fast.GetPixel(x, y).R;
             }
         }
 
@@ -294,9 +270,12 @@ namespace Laan.DLOD
             for (int y = 0; y < _patchesPerRow; y++)
                 for (int x = 0; x < _patchesPerRow; x++)
                 {
-                    _patches[x, y].Recalculate();
-                    indexCount += _patches[x, y].IndexBufferLength;
-                    vertexCount += _patches[x, y].VerticesCount;
+                    if (_patches[x, y].Visible)
+                    {
+                        _patches[x, y].Recalculate();
+                        indexCount += _patches[x, y].IndexBufferLength;
+                        vertexCount += _patches[x, y].VerticesCount;
+                    }
                 }
         }
 
@@ -336,7 +315,10 @@ namespace Laan.DLOD
             {
                 pass.Begin();
 
-                // generate index buffer for each patch
+                _device.VertexDeclaration = new VertexDeclaration(
+                    _device, SplattingVertex.VertexElements
+                );
+
                 for (int y = 0; y < _patchesPerRow; y++)
                 {
                     for (int x = 0; x < _patchesPerRow; x++)
@@ -344,9 +326,6 @@ namespace Laan.DLOD
                         Patch p = _patches[x, y];
                         if (p.Visible)
                         {
-                            _device.VertexDeclaration = new VertexDeclaration(
-                                _device, SplattingVertex.VertexElements
-                            );
                             _device.Vertices[0].SetSource(p.Buffer, 0, SplattingVertex.SizeInBytes);
                             _device.Indices = p.IndexBuffer;
                             try
@@ -376,7 +355,7 @@ namespace Laan.DLOD
             float h = _heightField[offset.X, offset.Y];
             if (h < heightThreshold[0])
                 h = heightThreshold[0];
-            return h *_scaleHeights;
+            return h * _scaleHeights;
         }
 
         private bool IsWholeNumber(double value)

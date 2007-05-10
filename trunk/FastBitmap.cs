@@ -1,123 +1,113 @@
 using System;
-using System.Collections.Generic;
-using System.Text;
-using System.IO;
 using System.Drawing;
+using System.Drawing.Imaging;
 
 namespace Laan.Drawing
 {
-    using System;
-    using System.Collections.Generic;
-    using System.Text;
-    using System.Drawing;
-    using System.Drawing.Imaging;
 
-    public unsafe class FastBitmap : IDisposable
+    public struct ColorARGB
     {
-        Bitmap bitmap;
+        public byte B;
+        public byte G;
+        public byte R;
+        public byte A;
 
-        // three elements used for MakeGreyUnsafe
+        public ColorARGB(Color color)
+        {
+            A = color.A;
+            R = color.R;
+            G = color.G;
+            B = color.B;
+        }
+
+        public ColorARGB(byte a, byte r, byte g, byte b)
+        {
+            A = a;
+            R = r;
+            G = g;
+            B = b;
+        }
+    
+        public Color ToColor()
+        {
+            return Color.FromArgb(A, R, G, B);
+        }
+    }
+
+    unsafe class FastBitmap : IDisposable
+    {
+
+        Bitmap     _bitmap;
+        BitmapData _bitmapData;
         int        _width;
-        BitmapData _bitmapData = null;
-        Byte*      _base = null;
+        int        _height;
+        ColorARGB* _startingPosition;
+
+        public FastBitmap()
+        {
+        }
+    
+        public FastBitmap(string fileName)
+        {
+            _bitmap = new Bitmap(fileName);
+            Load();
+        }
 
         public FastBitmap(Bitmap bitmap)
         {
-            this.bitmap = new Bitmap(bitmap);
-        }
-
-        public FastBitmap(int width, int height)
-        {
-            this.bitmap = new Bitmap(width, height, PixelFormat.Format24bppRgb);
+            _bitmap = bitmap;
+            Load();
         }
 
         public void Dispose()
         {
-            bitmap.Dispose();
+            if(_bitmap != null)
+                _bitmap.UnlockBits(_bitmapData);
         }
 
-        private Point PixelSize
+        public void Load()
         {
-            get
-            {
-                GraphicsUnit unit = GraphicsUnit.Pixel;
-                RectangleF bounds = bitmap.GetBounds(ref unit);
+            _width  = _bitmap.Width;
+            _height = _bitmap.Height;
 
-                return new Point((int)bounds.Width, (int)bounds.Height);
-            }
-        }
-
-        public void LockBitmap()
-        {
-            GraphicsUnit unit = GraphicsUnit.Pixel;
-            RectangleF boundsF = bitmap.GetBounds(ref unit);
-            Rectangle bounds = new Rectangle(
-                (int)boundsF.X,
-                (int)boundsF.Y,
-                (int)boundsF.Width,
-                (int)boundsF.Height
+            _bitmapData = _bitmap.LockBits(
+                new Rectangle(0, 0, _width, _height),
+                ImageLockMode.ReadWrite,
+                PixelFormat.Format32bppArgb
             );
 
-            // Figure out the number of bytes in a row
-            // This is rounded up to be a multiple of 4
-            // bytes, since a scan line in an image must always be a multiple of 4 bytes
-            // in length.
-            _width = (int)boundsF.Width * sizeof(PixelData);
-            if (_width % 4 != 0)
+            _startingPosition = (ColorARGB*)_bitmapData.Scan0;
+        }
+    
+        public Color GetPixel(int x, int y)
+        {
+            ColorARGB* position = _startingPosition + y * _height + x;
+            return Color.FromArgb(position->A, position->R, position->G, position->B);
+        }
+
+        public void SetPixel(int x, int y, Color color)
+        {
+            ColorARGB* position = _startingPosition + y * _height + x;
+            position->A = color.A;
+            position->R = color.R;
+            position->G = color.G;
+            position->B = color.B;
+        }
+
+        public void Invert()
+        {
+            for (int y = 0; y < _width; y++)
             {
-                _width = 4 * (_width / 4 + 1);
+                ColorARGB* pos = _startingPosition + y * _height;
+                for (int x = 0; x < _height; x++)
+                {
+                    pos->A = (byte)(255 - pos->A);
+                    pos->R = (byte)(255 - pos->R);
+                    pos->G = (byte)(255 - pos->G);
+                    pos->B = (byte)(255 - pos->B);
+                    pos++;
+                }
             }
-            _bitmapData = bitmap.LockBits(bounds, ImageLockMode.ReadWrite, PixelFormat.Format24bppRgb);
-
-            _base = (Byte*)_bitmapData.Scan0.ToPointer();
         }
-
-        public PixelData GetPixel(int x, int y)
-        {
-            PixelData returnValue = *PixelAt(x, y);
-            return returnValue;
-        }
-
-        public void SetPixel(int x, int y, PixelData colour)
-        {
-            PixelData* pixel = PixelAt(x, y);
-            *pixel = colour;
-        }
-
-        public void UnlockBitmap()
-        {
-            bitmap.UnlockBits(_bitmapData);
-            _bitmapData = null;
-            _base = null;
-        }
-        public PixelData* PixelAt(int x, int y)
-        {
-            return (PixelData*)(_base + y * _width + x * sizeof(PixelData));
-        }
-
-        #region IDisposable Members
-
-        void IDisposable.Dispose()
-        {
-            throw new Exception("The method or operation is not implemented.");
-        }
-
-        #endregion
-    }
-
-    public struct PixelData
-    {
-        public byte Blue;
-        public byte Green;
-        public byte Red;
-
-        public PixelData(System.Drawing.Color color)
-        {
-            Blue = color.B;
-            Green = color.G;
-            Red = color.R;
-//            Alpha = color.A;
-        }
-
     }
 }
