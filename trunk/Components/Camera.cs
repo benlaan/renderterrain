@@ -45,7 +45,7 @@ namespace Laan.DLOD
             //_lookAt = new Vector3(0, 0, _size / -4.0f);
             //_cameraUpVector = new Vector3(0, 0, 1);
 
-            _cameraPosition = new Vector3(_size / -2.0f, _size / -2.0f, _size * 8);
+            _cameraPosition = new Vector3(0, _size / -2.0f, _size * 8);
             _lookAt = new Vector3(0, 0, _size * 4);
             _cameraUpVector = new Vector3(0, 0, 1);
         }
@@ -90,12 +90,12 @@ namespace Laan.DLOD
             if (keyboardState.IsKeyDown(Keys.Left))
             {
                 change.X -= _step;
-                change.Y += _step;
+                //change.Y += _step;
             }
             if (keyboardState.IsKeyDown(Keys.Right))
             {
                 change.X += _step;
-                change.Y -= _step;
+                //change.Y -= _step;
             }
             if (keyboardState.IsKeyDown(Keys.PageUp))
             {
@@ -107,12 +107,12 @@ namespace Laan.DLOD
             }
             if (keyboardState.IsKeyDown(Keys.Up))
             {
-                change.X += _step;
+                //change.X += _step;
                 change.Y += _step;
             }
             if (keyboardState.IsKeyDown(Keys.Down))
             {
-                change.X -= _step;
+                //change.X -= _step;
                 change.Y -= _step;
             }
             if (keyboardState.IsKeyDown(Keys.Enter))

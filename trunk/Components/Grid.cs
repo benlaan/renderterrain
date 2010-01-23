@@ -21,7 +21,6 @@ namespace Laan.DLOD
 
         public Grid(Game game, Camera camera) : base(game)
         {
-            // TODO: Construct any child components here
             _camera = camera;
         }
 
@@ -63,8 +62,6 @@ namespace Laan.DLOD
         /// <param name="gameTime">Provides a snapshot of timing values.</param>
         public override void Update(GameTime gameTime)
         {
-            // TODO: Add your update code here
-
             base.Update(gameTime);
         }
 
@@ -97,8 +94,7 @@ namespace Laan.DLOD
 
                 VertexBuffer buffer = new VertexBuffer(
                     _device, VertexPositionNormalTexture.SizeInBytes * (pointList.Length),
-                    ResourceUsage.None,
-                    ResourceManagementMode.Automatic
+                    BufferUsage.None
                 );
 
                 buffer.SetData<VertexPositionNormalTexture>(pointList);

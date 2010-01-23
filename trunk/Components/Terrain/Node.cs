@@ -3,31 +3,33 @@ using System.Diagnostics;
 
 namespace Laan.DLOD
 {
-
     abstract class Node
     {
+        static private Direction[] DIRECTIONS = new Direction[] 
+        {
+            Direction.West, 
+            Direction.South, 
+            Direction.East, 
+            Direction.North 
+        };
+
         // unique reference - only required for debugging purposes
         internal int ID;
 
         // stores the indexes within the patch of this Node
-        internal int[]      indexes;
+        internal int[]      _indexes;
 
         internal Node(Patch patch)
         {
-            _owningPatch = patch;
+            Patch = patch;
             ID = ++uniqueCount;
         }
 
         // stores any children associated with this Triangle, after splitting
-        private Triangle[] _children;
         // indicates the level of recursion of splitting
-        private int _depth;
         // indicates the inherited cardinality of this Node (N, E, S, W)
-        private Direction _orientation;
         // a reference to the owning patch - in order to obtain the split level
-        private Patch _owningPatch;
         // reference to the parent node in order to 'inherit' orientation
-        private Node _parent;
 
         protected static int uniqueCount;
         protected static int directionCount;
@@ -50,6 +52,7 @@ namespace Laan.DLOD
         protected void Split()
         {
             if(Depth <= Patch.Level || ((Depth - Patch.Level == 1) && SplitOnEdge()))
+            //if ()
             {
                 InstantiateChildren();
 
@@ -57,11 +60,11 @@ namespace Laan.DLOD
 
                 for(int index = 0; index < 2; index++)
                 {
-                    int middleIndex = Math.Abs((int)((indexes[1] - indexes[2]) / 2) + indexes[2]);
-                    Children[index].indexes = new int[3] {
+                    int middleIndex = Math.Abs((int)((_indexes[1] - _indexes[2]) / 2) + _indexes[2]);
+                    Children[index]._indexes = new int[3] {
                         middleIndex,
-                        indexes[data[index, 0]],
-                        indexes[data[index, 1]]
+                        _indexes[data[index, 0]],
+                        _indexes[data[index, 1]]
                     };
                     InheritDirectionFromParent(Children[index]);
                 }
@@ -79,11 +82,6 @@ namespace Laan.DLOD
 
         protected void InstantiateChildren()
         {
-            Direction[] cDIRECTIONS = new Direction[4]
-            {
-                Direction.West, Direction.South, Direction.East, Direction.North
-            };
-
             Children = new Triangle[2];
             for(int index = 0; index < 2; index++)
             {
@@ -92,13 +90,13 @@ namespace Laan.DLOD
                 // level 1 is the first depth that can have a defined orientation -
                 // subsequent levels will inherited it from their parent
                 if(Depth == 1)
-                    Children[index].Orientation = cDIRECTIONS[directionCount++];
+                    Children[index].Orientation = DIRECTIONS[directionCount++];
             }
         }
 
         private void InheritDirectionFromParent(Node node)
         {
-            // all non-internal nodes simple ontain their direction from their parent
+            // all non-internal nodes simple obtain their direction from their parent
             // special case: direction is none is used for level 0 nodes which have no direction
             if(node.IsInternal())
                 node.Orientation = Direction.Internal;
@@ -120,7 +118,7 @@ namespace Laan.DLOD
         {
             // a node is Internal if it has less than two points (indexes) on the edge
             int count = 0;
-            foreach(int index in indexes)
+            foreach(int index in _indexes)
                 if(IndexIsOnEdge(index))
                     count++;
 
@@ -136,7 +134,7 @@ namespace Laan.DLOD
             Patch sibling = null;
             if (Patch.HasSibling(Orientation, ref sibling) && (Patch.Level == sibling.Level - 1))
                 return true;
-
+            
             return false;
         }
 
@@ -154,84 +152,17 @@ namespace Laan.DLOD
             }
             else
             {
-                foreach (int index in indexes)
+                foreach (int index in _indexes)
                     _allIndexes[pos++] = index;
             }
         }
 
-        public Triangle[] Children
-        {
-            get { return _children; }
-            set { _children = value; }
-        }
-
-        public int Depth
-        {
-            get { return _depth; }
-            set { _depth = value; }
-        }
-
+        public Triangle[] Children { get; set; }
+        public int Depth { get; set; }
         // indicates the inherited cardinality of this Node (N, E, S, W)
-        public Direction Orientation
-        {
-            get { return _orientation; }
-            set { _orientation = value; }
-        }
-
-        public Node Parent
-        {
-            get { return _parent; }
-            set { _parent = value; }
-        }
-
-        public Patch Patch
-        {
-            get { return _owningPatch; }
-            set { _owningPatch = value; }
-        }
+        public Direction Orientation { get; set; }
+        public Node Parent { get; set; }
+        public Patch Patch { get; set; }
     }
-
-    class RootNode : Node
-    {
-
-        internal RootNode(Patch patch) : base(patch)
-        {
-            Depth = 0;
-            Orientation = Direction.None;
-
-            Initialize();
-        }
-
-        internal void Initialize()
-        {
-            uniqueCount = 0;
-            directionCount = 0;
-
-            InstantiateChildren();
-
-            int width = Patch.Size - 1;
-            Children[0].indexes = new int[3]{0, Patch.Size * width, width};
-            Children[1].indexes = new int[3]{(Patch.Size * Patch.Size) - 1, width, Patch.Size * width};
-
-            TraceChildren();
-            SplitChildren();
-        }
-
-        internal override void CalcAllIndexes(ref int pos, ref int[] _allIndexes)
-        {
-            Split(ref pos, ref _allIndexes);
-        }
-    }
-
-    class Triangle : Node
-    {
-
-        internal Triangle(Node parent, Patch patch) : base(patch)
-        {
-            Parent = parent;
-            Depth = parent.Depth + 1;
-        }
-    }
-
 }
 
