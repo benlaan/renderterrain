@@ -37,7 +37,7 @@ namespace Laan.Drawing
     unsafe class FastBitmap : IDisposable
     {
 
-        Bitmap     _bitmap;
+        System.Drawing.Bitmap     _bitmap;
         BitmapData _bitmapData;
         int        _width;
         int        _height;
@@ -49,11 +49,11 @@ namespace Laan.Drawing
     
         public FastBitmap(string fileName)
         {
-            _bitmap = new Bitmap(fileName);
+            _bitmap = new System.Drawing.Bitmap(fileName);
             Load();
         }
 
-        public FastBitmap(Bitmap bitmap)
+        public FastBitmap(System.Drawing.Bitmap bitmap)
         {
             _bitmap = bitmap;
             Load();
