@@ -25,7 +25,7 @@ namespace DLOD31.Properties {
         
         [global::System.Configuration.UserScopedSettingAttribute()]
         [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
-        [global::System.Configuration.DefaultSettingValueAttribute("32")]
+        [global::System.Configuration.DefaultSettingValueAttribute("16")]
         public int PatchWidth {
             get {
                 return ((int)(this["PatchWidth"]));
@@ -56,6 +56,30 @@ namespace DLOD31.Properties {
             }
             set {
                 this["PatchLevelBias"] = value;
+            }
+        }
+        
+        [global::System.Configuration.UserScopedSettingAttribute()]
+        [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
+        [global::System.Configuration.DefaultSettingValueAttribute("16")]
+        public float Threshold {
+            get {
+                return ((float)(this["Threshold"]));
+            }
+            set {
+                this["Threshold"] = value;
+            }
+        }
+        
+        [global::System.Configuration.UserScopedSettingAttribute()]
+        [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
+        [global::System.Configuration.DefaultSettingValueAttribute("0.08")]
+        public float HeightMultiplier {
+            get {
+                return ((float)(this["HeightMultiplier"]));
+            }
+            set {
+                this["HeightMultiplier"] = value;
             }
         }
     }

@@ -10,6 +10,12 @@ using System.Configuration;
 using XNAExtras;
 using DLOD31.Properties;
 
+#if DISCRETE
+    using Component = Laan.DLOD.Discrete;
+#else
+    using Component = Laan.DLOD.Levelled;
+#endif
+
 namespace Laan.DLOD
 {
     /// <summary>
@@ -20,7 +26,7 @@ namespace Laan.DLOD
         private GraphicsDeviceManager _graphics;
         private ContentManager _content;
         private BitmapFont _fontCourierNew;
-        private Terrain _terrain;
+        private Component.Terrain _terrain;
         private Camera _camera;
 
         public GameController()
@@ -48,7 +54,7 @@ namespace Laan.DLOD
             int patchWidth = Settings.Default.PatchWidth;
             string heightMap = Settings.Default.HeightMap;
 
-            _terrain = new Terrain(this, heightMap, patchWidth);
+            _terrain = new Component.Terrain(this, heightMap, patchWidth);
             _camera = new Camera(_terrain, this, _terrain.Height);
             _terrain.Camera = _camera;
             _fontCourierNew = new BitmapFont(@"..\..\..\Content\courier12.xml", this);

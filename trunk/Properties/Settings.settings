@@ -3,13 +3,19 @@
   <Profiles />
   <Settings>
     <Setting Name="PatchWidth" Type="System.Int32" Scope="User">
-      <Value Profile="(Default)">32</Value>
+      <Value Profile="(Default)">16</Value>
     </Setting>
     <Setting Name="HeightMap" Type="System.String" Scope="User">
       <Value Profile="(Default)">heightMapEarth513x513.png</Value>
     </Setting>
     <Setting Name="PatchLevelBias" Type="System.Int32" Scope="User">
       <Value Profile="(Default)">0</Value>
+    </Setting>
+    <Setting Name="Threshold" Type="System.Single" Scope="User">
+      <Value Profile="(Default)">16</Value>
+    </Setting>
+    <Setting Name="HeightMultiplier" Type="System.Single" Scope="User">
+      <Value Profile="(Default)">0.08</Value>
     </Setting>
   </Settings>
 </SettingsFile>
