@@ -18,7 +18,7 @@ namespace Laan.DLOD
         Vector3 _cameraPosition;
         Vector3 _lookAt;
         Vector3 _cameraUpVector;
-        Terrain _terrain;
+        ITerrain _terrain;
 
         Game _game;
 
@@ -26,7 +26,8 @@ namespace Laan.DLOD
         int _size;
         bool _moved;
 
-        public Camera(Terrain terrain, Game game, int size) : base(game)
+        public Camera(ITerrain terrain, Game game, int size)
+            : base(game)
         {
             _terrain = terrain;
             _size = size;
@@ -69,19 +70,23 @@ namespace Laan.DLOD
         {
             KeyboardState keyboardState = Keyboard.GetState();
 
-            //this.Game.Window.Title = String.Format("P: {0} L: {1}", _cameraPosition, _lookAt);
-
             bool reset = false;
             Vector3 change = new Vector3();
             int scale = 1;
 
+            const int MaxZoom = 4096;
+            const int MinZoom = 1024;
+            _step = _size / (50.0f + 50 * (_cameraPosition.Z / MaxZoom));
+
             if (keyboardState.IsKeyDown(Keys.Insert))
             {
-                _cameraPosition.Z += 50 * _terrain._scale;
+                _cameraPosition.Z += 5 * _terrain.Scale;
+                //_lookAt.Z += 5 * _terrain.Scale;
             }
             if (keyboardState.IsKeyDown(Keys.Delete))
             {
-                _cameraPosition.Z -= 50 * _terrain._scale;
+                _cameraPosition.Z -= 5 * _terrain.Scale;
+                //_lookAt.Z -= 5 * _terrain.Scale;
             }
             if (keyboardState.IsKeyDown(Keys.LeftShift))
             {
@@ -90,29 +95,25 @@ namespace Laan.DLOD
             if (keyboardState.IsKeyDown(Keys.Left))
             {
                 change.X -= _step;
-                //change.Y += _step;
             }
             if (keyboardState.IsKeyDown(Keys.Right))
             {
                 change.X += _step;
-                //change.Y -= _step;
             }
             if (keyboardState.IsKeyDown(Keys.PageUp))
             {
-                change.Z -= _step;
+                change.Z -= _step * _terrain.Scale;
             }
             if (keyboardState.IsKeyDown(Keys.PageDown))
             {
-                change.Z += _step;
+                change.Z += _step * _terrain.Scale;
             }
             if (keyboardState.IsKeyDown(Keys.Up))
             {
-                //change.X += _step;
                 change.Y += _step;
             }
             if (keyboardState.IsKeyDown(Keys.Down))
             {
-                //change.X -= _step;
                 change.Y -= _step;
             }
             if (keyboardState.IsKeyDown(Keys.Enter))
@@ -120,7 +121,7 @@ namespace Laan.DLOD
 
             if (!reset)
             {
-                change *= _terrain._scale * scale;
+                change *= _terrain.Scale * scale;
 
                 _cameraPosition += change;
                 _lookAt += change;
@@ -130,9 +131,14 @@ namespace Laan.DLOD
                 Reset();
             }
 
-            _moved = ((change.X != 0) || (change.Y != 0));
+            //_moved = ((change.X != 0) || (change.Y != 0));
 
             base.Update(gameTime);
+        }
+
+        private float Cap(int from, int to, int value )
+        {
+            return Math.Min(Math.Max(value, from), to);
         }
 
         public bool Moved
