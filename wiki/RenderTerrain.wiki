@@ -1,10 +1,17 @@
 #summary Main Page
+#labels Featured
 
 = Introduction =
 
-This project is an implemention of a Discrete Level Of Detail Algorithm, as found on www.gamasutra.com, by Chris Dallaire, entitled "Binary Triangle Trees for Terrain Tile Index Buffer Generation".
+This project contains two implementions of Level Of Detail (LOD) terrain rendering. These were inspired by the following publications:
 
-Currently supports only _very_ limited shading..
+* Discrete Level Of Detail Algorithm, as found on www.gamasutra.com, by Chris Dallaire, entitled "Binary Triangle Trees for Terrain Tile Index Buffer Generation".
+* Terrain Simplification Simplified: A General Framework for View-Dependant Out-of-Core Visualization, by Peter Lindstrom. 
+
+I am currently using Simplification algorithm, as I understand it. It is probably not a good implementation of it, but is sufficient at this stage for my needs.
+
+It currently supports _very_ limited shading.. by combining 4 textures based on height. No texture maps per 'real world' terrain data.
+
 
 
 = Other Information =
@@ -16,3 +23,4 @@ Currently supports only _very_ limited shading..
  * text for logging, fps, etc
  * text-based command menu
 
+- Ben Laan
