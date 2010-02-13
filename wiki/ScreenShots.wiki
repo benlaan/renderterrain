@@ -2,7 +2,7 @@
 
 = Textured =
 
-This is an example of a textured terrain from this project. 
+This is an example of a textured terrain from this project. The choice of texture is purely based on a height range. Ideally, there would be a separate map to indicate terrain. i.e., to specify deserts and rain forests appropriately.
 
 [http://laanfamily.com/images/textured.jpg]
 
