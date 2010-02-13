@@ -16,6 +16,10 @@ It currently supports _very_ limited shading.. by combining 4 textures based on 
  * [http://www.gamasutra.com/features/20061221/dallaire_01.shtml Discrete LOD article]
  * [http://www.shamusyoung.com/twentysidedtale/?p=141 Simplification article]
 
+= Information = 
+
+[ScreenShots Screen Shots]
+
 = To Do List =
  * Better shader effects
  * improved camera logic
