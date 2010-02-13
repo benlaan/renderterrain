@@ -8,7 +8,7 @@ This project contains two implementions of Level Of Detail (LOD) terrain renderi
  * Discrete Level Of Detail Algorithm, as found on www.gamasutra.com, by Chris Dallaire, entitled "Binary Triangle Trees for Terrain Tile Index Buffer Generation".
  * Terrain Simplification Simplified: A General Framework for View-Dependant Out-of-Core Visualization, by Peter Lindstrom. This was referenced by Shamus Young, who wrote an OpenGL implementation.
 
-I am currently using Simplification algorithm, as I understand it. It is probably not a good implementation of it, but is sufficient at this stage for my needs.
+I am currently using a 'home brew' implementation of parts of the Simplification algorithm, as I understand it. It is probably not a good rendition, but is sufficient at this stage for my needs.
 
 It currently supports _very_ limited shading.. by combining 4 textures based on height. No texture maps per 'real world' terrain data.
 
